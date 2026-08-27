@@ -13,6 +13,18 @@ const Experience3DPage = lazy(() =>
 const AdminImportPage = lazy(() =>
   import('./pages/AdminImportPage').then((m) => ({ default: m.AdminImportPage })),
 );
+const VillageEditPage = lazy(() =>
+  import('./pages/VillageEditPage').then((m) => ({ default: m.VillageEditPage })),
+);
+const AdminSitesPage = lazy(() =>
+  import('./pages/AdminSitesPage').then((m) => ({ default: m.AdminSitesPage })),
+);
+const AdminHeritageBuildingsPage = lazy(() =>
+  import('./pages/AdminHeritageBuildingsPage').then((m) => ({ default: m.AdminHeritageBuildingsPage })),
+);
+const AdminGenericPage = lazy(() =>
+  import('./pages/AdminGenericPage').then((m) => ({ default: m.AdminGenericPage })),
+);
 const VillageIntroductionPage = lazy(() =>
   import('./pages/VillageIntroductionPage').then((m) => ({ default: m.VillageIntroductionPage })),
 );
@@ -35,6 +47,10 @@ export function App() {
             <Route path="360" element={<Experience3DPage />} />
           </Route>
           <Route path="/admin/import" element={<AdminImportPage />} />
+          <Route path="/admin/villages" element={<VillageEditPage />} />
+          <Route path="/admin/sites" element={<AdminSitesPage />} />
+          <Route path="/admin/heritage-buildings" element={<AdminHeritageBuildingsPage />} />
+          <Route path="/admin/data" element={<AdminGenericPage />} />
         </Routes>
       </Suspense>
     </div>

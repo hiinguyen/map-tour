@@ -3,3 +3,5 @@ backups/
 .claude/
 .playwright-mcp/
 map-tour/routing/data/
+exports/*
+map-tour/public/

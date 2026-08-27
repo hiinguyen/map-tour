@@ -36,3 +36,8 @@ const FALLBACK_STYLE: CategoryStyle = { color: '#610000', icon: ICON_GATE };
 export function getCategoryStyle(category: string): CategoryStyle {
   return CATEGORY_STYLES[category] ?? FALLBACK_STYLE;
 }
+
+// Known category strings, exposed for admin-form suggestions (e.g. a
+// <datalist>). Category itself stays free text — it is not a DB enum — this
+// list is just the source of truth for the values styled above.
+export const KNOWN_SITE_CATEGORIES: string[] = Object.keys(CATEGORY_STYLES);

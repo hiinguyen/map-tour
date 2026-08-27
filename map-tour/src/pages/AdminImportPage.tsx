@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import type { FormEvent } from 'react';
-import { commitImport, getAdminKey, parseImportFile, setAdminKey } from '../lib/adminApi';
+import { AdminKeyGate } from '../components/AdminKeyGate';
+import { AdminNav } from '../components/AdminNav';
+import { commitImport, parseImportFile } from '../lib/adminApi';
 import type { ImportCommitSummary, ParsedImport } from '../lib/importTypes';
 
 function getErrorMessage(error: unknown): string {
@@ -8,20 +10,12 @@ function getErrorMessage(error: unknown): string {
 }
 
 export function AdminImportPage() {
-  const [adminKeyInput, setAdminKeyInput] = useState(getAdminKey());
-  const [hasAdminKey, setHasAdminKey] = useState(getAdminKey().length > 0);
   const [file, setFile] = useState<File | null>(null);
   const [parsed, setParsed] = useState<ParsedImport | null>(null);
   const [summary, setSummary] = useState<ImportCommitSummary | null>(null);
   const [isParsing, setIsParsing] = useState(false);
   const [isCommitting, setIsCommitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  function handleSaveKey(event: FormEvent) {
-    event.preventDefault();
-    setAdminKey(adminKeyInput.trim());
-    setHasAdminKey(adminKeyInput.trim().length > 0);
-  }
 
   async function handleParse(event: FormEvent) {
     event.preventDefault();
@@ -62,31 +56,8 @@ export function AdminImportPage() {
     setParsed({ ...parsed, decorativeArtItems });
   }
 
-  if (!hasAdminKey) {
-    return (
-      <div className="admin-import">
-        <header className="admin-import__header">
-          <h1>Nhập dữ liệu từ Excel</h1>
-        </header>
-        <form className="admin-import__key-form" onSubmit={handleSaveKey}>
-          <label htmlFor="admin-key">Khóa quản trị</label>
-          <input
-            id="admin-key"
-            type="password"
-            value={adminKeyInput}
-            onChange={(event) => setAdminKeyInput(event.target.value)}
-            placeholder="Nhập khóa admin để tiếp tục"
-            autoFocus
-          />
-          <button type="submit" disabled={!adminKeyInput.trim()}>
-            Tiếp tục
-          </button>
-        </form>
-      </div>
-    );
-  }
-
   return (
+    <AdminKeyGate title="Nhập dữ liệu từ Excel">
     <div className="admin-import">
       <header className="admin-import__header">
         <h1>Nhập dữ liệu từ Excel</h1>
@@ -95,6 +66,7 @@ export function AdminImportPage() {
           di sản phi vật thể và sản phẩm nghề vào CSDL. Bản đồ tổng thể (sheet 2) và điều tra xã hội học (sheet 8)
           không được nhập tự động — xem cảnh báo bên dưới.
         </p>
+        <AdminNav current="/admin/import" />
       </header>
 
       <form className="admin-import__upload-form" onSubmit={handleParse}>
@@ -237,5 +209,6 @@ export function AdminImportPage() {
         </div>
       )}
     </div>
+    </AdminKeyGate>
   );
 }
