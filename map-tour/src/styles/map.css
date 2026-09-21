@@ -1,0 +1,364 @@
+/* ==========================================================================
+   Map page
+   --------------------------------------------------------------------------
+   A working tool rather than a promotional surface, so the density here is
+   deliberately higher than the rest of the site. What it borrows from the
+   other pages is the paper ground, the lacquer accent and the gold hairline,
+   so the sidebar reads as the same publication and not as an embedded widget.
+   ========================================================================== */
+
+.map-page {
+  flex: 1;
+  display: flex;
+  min-height: 0;
+  background: var(--color-background);
+}
+
+/* --------------------------------------------------------------------------
+   Sidebar
+   -------------------------------------------------------------------------- */
+.app__sidebar {
+  position: relative;
+  width: 330px;
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  background: var(--color-surface-container-low);
+  border-right: 1px solid var(--color-outline-variant);
+}
+
+/* The carved beam separating the index from the map. */
+.app__sidebar::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  right: -1px;
+  width: 1px;
+  background: linear-gradient(180deg, var(--gold), transparent 45%);
+  opacity: 0.45;
+  pointer-events: none;
+}
+
+.app__sidebar-header {
+  padding: 1.25rem 1.35rem 1rem;
+  border-bottom: 1px solid var(--color-outline-variant);
+}
+
+.app__sidebar-header h2 {
+  margin: 0 0 0.3rem;
+  font-size: 1.22rem;
+  color: var(--color-primary);
+}
+
+.app__sidebar-header p {
+  margin: 0;
+  font-size: var(--text-xs);
+  line-height: 1.5;
+  color: var(--color-on-surface-variant);
+}
+
+.app__sidebar-list {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 0.5rem 0 1.5rem;
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-outline-variant) transparent;
+}
+
+.app__sidebar-list::-webkit-scrollbar {
+  width: 8px;
+}
+
+.app__sidebar-list::-webkit-scrollbar-thumb {
+  background: var(--color-outline-variant);
+  border-radius: var(--radius-full);
+}
+
+.app__sidebar-status {
+  padding: 1rem 1.35rem;
+  margin: 0;
+  font-size: var(--text-sm);
+  color: var(--color-on-surface-variant);
+}
+
+.app__sidebar-status--error {
+  color: var(--color-primary-container);
+  font-weight: 500;
+}
+
+.app__map {
+  flex: 1;
+  min-width: 0;
+  position: relative;
+}
+
+/* --------------------------------------------------------------------------
+   Site list
+   Grouped by category, separated by hairlines rather than by card boxes: at
+   this density a stack of cards would cost more room than it earns.
+   -------------------------------------------------------------------------- */
+.site-list {
+  padding: 0.5rem 0.75rem;
+}
+
+.site-list__group + .site-list__group {
+  margin-top: 1.4rem;
+}
+
+.site-list__group-title {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  margin: 0 0 0.5rem;
+  padding: 0 0.6rem;
+  font-family: var(--font-sans);
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+  color: var(--gold-deep);
+}
+
+.site-list__group-title::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--color-outline-variant);
+}
+
+.site-list__group-items {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.site-list__row + .site-list__row {
+  border-top: 1px solid var(--color-outline-variant);
+}
+
+.site-list__row-inner {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.7rem 0.6rem;
+  transition: background var(--duration-fast) var(--ease);
+}
+
+.site-list__row-inner:hover {
+  background: var(--color-surface-container);
+}
+
+/* Active row is marked by a lacquer bar as well as by colour, so the state
+   survives both greyscale and colour-vision differences. */
+.site-list__row-inner--active {
+  background: var(--color-surface-container-high);
+}
+
+.site-list__row-inner--active::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0.35rem;
+  bottom: 0.35rem;
+  width: 3px;
+  background: var(--color-primary);
+}
+
+.site-list__item {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  padding: 0;
+  font: inherit;
+  text-align: left;
+  color: inherit;
+  background: none;
+  border: 0;
+  cursor: pointer;
+}
+
+.site-list__name {
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: var(--color-on-surface);
+}
+
+.site-list__meta {
+  font-size: var(--text-xs);
+  color: var(--color-on-surface-variant);
+}
+
+.site-list__row-inner--active .site-list__name {
+  color: var(--color-primary);
+  font-weight: 600;
+}
+
+/* --------------------------------------------------------------------------
+   360° affordance
+   Gold is the ornament colour everywhere else on the site; here it also has to
+   work as a control, so it is used as an outline with lacquer text rather than
+   as a solid yellow fill (which fails contrast against dark labels).
+   -------------------------------------------------------------------------- */
+.site-list__panorama-btn {
+  flex: none;
+  padding: 0.3rem 0.6rem;
+  font-family: var(--font-sans);
+  font-size: 0.7rem;
+  font-weight: 600;
+  white-space: nowrap;
+  color: var(--color-primary);
+  background: transparent;
+  border: 1px solid var(--gold);
+  border-radius: var(--radius-full);
+  cursor: pointer;
+  transition:
+    background var(--duration-fast) var(--ease),
+    color var(--duration-fast) var(--ease);
+}
+
+.site-list__panorama-btn:hover {
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+  color: var(--color-on-primary);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .site-list__row-inner,
+  .site-list__panorama-btn {
+    transition: none;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   Below 900px the map and its index stack. The map is what the page is for, so
+   it comes first and holds a fixed share of the viewport; the index then flows
+   underneath at its natural height rather than being squeezed into a short box
+   that the directions form fills on its own.
+   -------------------------------------------------------------------------- */
+@media (max-width: 900px) {
+  .map-page {
+    flex-direction: column;
+  }
+
+  .app__map {
+    order: 1;
+    min-height: 58vh;
+    flex: none;
+  }
+
+  .app__sidebar {
+    order: 2;
+    width: 100%;
+    max-height: none;
+    border-right: 0;
+    border-top: 1px solid var(--color-outline-variant);
+  }
+
+  .app__sidebar::after {
+    display: none;
+  }
+
+  .app__sidebar-list {
+    overflow-y: visible;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   Directions panel
+   The submit button previously sat at a washed rose with white text, which
+   fails AA. It now carries the same lacquer fill as every other primary
+   action on the site.
+   -------------------------------------------------------------------------- */
+.directions-panel {
+  padding: 1rem 1.35rem 1.15rem;
+  border-bottom: 1px solid var(--color-outline-variant);
+}
+
+.directions-panel__title {
+  margin: 0 0 0.7rem;
+  font-family: var(--font-display);
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--color-primary);
+}
+
+.directions-panel__row {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-bottom: 0.6rem;
+}
+
+.directions-panel__select {
+  width: 100%;
+  padding: 0.55rem 0.7rem;
+  font-family: var(--font-sans);
+  font-size: var(--text-sm);
+  color: var(--color-on-surface);
+  background: var(--color-surface-container-lowest);
+  border: 1px solid var(--color-outline);
+  border-radius: var(--radius-sm);
+}
+
+.directions-panel__submit {
+  width: 100%;
+  padding: 0.6rem 1rem;
+  font-family: var(--font-sans);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--color-on-primary);
+  background: var(--color-primary);
+  border: 1px solid var(--color-primary);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: background var(--duration-fast) var(--ease);
+}
+
+.directions-panel__submit:hover:not(:disabled) {
+  background: var(--color-primary-container);
+}
+
+.directions-panel__submit:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.directions-panel__status {
+  margin: 0.6rem 0 0;
+  font-size: var(--text-xs);
+  color: var(--color-on-surface-variant);
+}
+
+.directions-panel__status--error {
+  color: var(--color-primary-container);
+  font-weight: 500;
+}
+
+.directions-panel__result {
+  margin-top: 0.7rem;
+}
+
+.directions-panel__summary {
+  margin: 0 0 0.5rem;
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--color-primary);
+}
+
+.directions-panel__steps {
+  margin: 0;
+  padding-left: 1.1rem;
+  font-size: var(--text-xs);
+  line-height: 1.6;
+  color: var(--color-on-surface-variant);
+}
+
+.directions-panel__step + .directions-panel__step {
+  margin-top: 0.25rem;
+}

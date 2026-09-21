@@ -33,7 +33,7 @@ import type { PoolClient } from 'pg';
 import { pool } from '../src/db.js';
 import { extractLabeledRows, valueByLastSegment } from '../src/lib/excelExtract.js';
 import { slugifyVietnamese } from '../src/lib/slugify.js';
-import { driveFileId, downloadDriveFile } from './lib/drivePhoto.js';
+import { driveFileId, downloadDriveFile, isEquirectangular } from './lib/drivePhoto.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const XLSX_PATH = path.resolve(__dirname, '../../../Ước Lễ.xlsx');
@@ -325,7 +325,17 @@ async function processBuildingPhotoTask(
       return 'skipped-download';
     }
 
-    const kind = task.isPanorama && downloaded.kind === 'anh' ? 'panorama' : downloaded.kind;
+    // Geometry, not the workbook label, decides 360°: see isEquirectangular()
+    // in lib/drivePhoto.ts. Surveyors' "360" labels produced both false
+    // positives and misses across these workbooks (migrations/014), so the
+    // real pixels win — a disagreement is logged as a data-entry warning.
+    const isPanorama = isEquirectangular(downloaded);
+    if (task.isPanorama !== isPanorama) {
+      console.warn(
+        `  [nhãn lệch] ${task.buildingLabel}: workbook ghi "${task.isPanorama ? '360' : 'ảnh thường'}" nhưng ảnh thật là "${isPanorama ? '360 (2:1)' : 'ảnh thường'}" — lấy theo ảnh thật.`,
+      );
+    }
+    const kind = isPanorama ? 'panorama' : downloaded.kind;
     const fileName = `${slug}-${nextIndex}.${downloaded.extension}`;
     const relativeUrl = `/uoc-le/heritage-buildings/${fileName}`;
     const absolutePath = path.join(PUBLIC_DIR, 'heritage-buildings', fileName);
@@ -434,7 +444,17 @@ async function processTask(
       return 'skipped-download';
     }
 
-    const kind = task.isPanorama && downloaded.kind === 'anh' ? 'panorama' : downloaded.kind;
+    // Geometry, not the workbook label, decides 360°: see isEquirectangular()
+    // in lib/drivePhoto.ts. Surveyors' "360" labels produced both false
+    // positives and misses across these workbooks (migrations/014), so the
+    // real pixels win — a disagreement is logged as a data-entry warning.
+    const isPanorama = isEquirectangular(downloaded);
+    if (task.isPanorama !== isPanorama) {
+      console.warn(
+        `  [nhãn lệch] ${task.siteName}: workbook ghi "${task.isPanorama ? '360' : 'ảnh thường'}" nhưng ảnh thật là "${isPanorama ? '360 (2:1)' : 'ảnh thường'}" — lấy theo ảnh thật.`,
+      );
+    }
+    const kind = isPanorama ? 'panorama' : downloaded.kind;
     const fileName = `${slug}-${nextIndex}.${downloaded.extension}`;
     const relativeUrl = `/uoc-le/sites/${fileName}`;
     const absolutePath = path.join(PUBLIC_DIR, 'sites', fileName);

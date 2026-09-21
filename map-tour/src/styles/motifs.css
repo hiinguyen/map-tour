@@ -1,0 +1,211 @@
+/* ==========================================================================
+   Motifs - traditional Vietnamese ornament, as reusable primitives
+   --------------------------------------------------------------------------
+   These are the pieces that make the site read as heritage rather than as a
+   generic travel template. Each one is a real motif from đình/chùa carpentry
+   or sơn mài panelling, not invented decoration:
+
+     .motif-fret     hồi văn   - the meander border running along đình beams
+     .motif-lattice  mắt cáo   - the diamond window grille
+     .motif-rule     a gold hairline broken by a lozenge, as on lacquer trays
+     .motif-seal     triện     - the square red seal stamped on documents
+     .motif-grain    giấy dó   - handmade-paper tooth
+
+   Ornament is drawn with CSS gradients and two small geometric SVG patterns.
+   Icon libraries do not ship Vietnamese architectural ornament, and these are
+   simple repeating geometry rather than illustration, so they are authored
+   here rather than imported.
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   Hồi văn - meander fret border
+   Used as a top rule on major sections. One tile is a single key unit; the
+   pattern repeats along x only, so it reads as a carved beam, not wallpaper.
+   -------------------------------------------------------------------------- */
+.motif-fret {
+  height: 10px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='32' height='10' viewBox='0 0 32 10'%3E%3Cpath d='M0 9h4V3h8v3H8v1h5V2H3v7h13V1h13v8h3' fill='none' stroke='%23c9a227' stroke-width='1.1'/%3E%3C/svg%3E");
+  background-repeat: repeat-x;
+  background-position: center;
+  opacity: 0.75;
+}
+
+/* --------------------------------------------------------------------------
+   Mắt cáo - diamond lattice
+   Stands in for photography that does not exist yet. A missing cover photo
+   becomes a carved grille instead of a grey box with an initial in it.
+   -------------------------------------------------------------------------- */
+.motif-lattice {
+  background-color: var(--color-surface-container);
+  background-image:
+    repeating-linear-gradient(45deg, transparent 0 13px, var(--gold-wash) 13px 15px),
+    repeating-linear-gradient(-45deg, transparent 0 13px, var(--gold-wash) 13px 15px);
+}
+
+/* Denser variant for small tiles (badges, thumbnails) so the weave still
+   reads at 80px rather than turning into two stray lines. */
+.motif-lattice--fine {
+  background-image:
+    repeating-linear-gradient(45deg, transparent 0 6px, var(--gold-wash) 6px 7px),
+    repeating-linear-gradient(-45deg, transparent 0 6px, var(--gold-wash) 6px 7px);
+}
+
+/* --------------------------------------------------------------------------
+   Gold rule with centre lozenge - the lacquer-tray divider
+   -------------------------------------------------------------------------- */
+.motif-rule {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  color: var(--gold);
+}
+
+.motif-rule::before,
+.motif-rule::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, currentColor 22%, currentColor 78%, transparent);
+  opacity: 0.55;
+}
+
+.motif-rule__lozenge {
+  width: 7px;
+  height: 7px;
+  flex: none;
+  background: currentColor;
+  transform: rotate(45deg);
+}
+
+/* Left-anchored short rule, for use directly under a section headline. */
+.motif-rule-start {
+  width: 56px;
+  height: 2px;
+  background: var(--gold);
+  opacity: 0.8;
+}
+
+/* --------------------------------------------------------------------------
+   Triện - the square seal
+   A stamped mark that labels a section without needing an eyebrow above every
+   headline. Carries a character passed in via the element's text content.
+   -------------------------------------------------------------------------- */
+.motif-seal {
+  display: inline-grid;
+  place-items: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  flex: none;
+  font-family: var(--font-display);
+  font-size: 1.15rem;
+  line-height: 1;
+  color: var(--color-on-primary);
+  background: var(--color-primary-container);
+  border: 1px solid var(--gold);
+  box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.14);
+  border-radius: var(--radius-sm);
+  user-select: none;
+}
+
+/* --------------------------------------------------------------------------
+   Giấy dó - paper tooth
+   Fixed and non-interactive so the filter composites once instead of
+   repainting on every scroll frame.
+   -------------------------------------------------------------------------- */
+.motif-grain {
+  position: fixed;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  opacity: 0.035;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* --------------------------------------------------------------------------
+   Mái đao - the upturned eave
+   A section can end on a roofline instead of a straight edge. Drawn as a
+   clip-path on a coloured band so it inherits whatever sits behind it.
+   -------------------------------------------------------------------------- */
+.motif-eave {
+  height: clamp(28px, 4vw, 52px);
+  background: var(--color-primary);
+  clip-path: polygon(
+    0% 100%, 0% 42%, 6% 34%, 18% 22%, 34% 12%, 50% 8%,
+    66% 12%, 82% 22%, 94% 34%, 100% 42%, 100% 100%
+  );
+}
+
+/* ==========================================================================
+   Shared utilities
+   ========================================================================== */
+
+.u-shell {
+  width: 100%;
+  max-width: var(--shell);
+  margin-inline: auto;
+  padding-inline: var(--gutter);
+}
+
+.u-shell-wide {
+  width: 100%;
+  max-width: var(--shell-wide);
+  margin-inline: auto;
+  padding-inline: var(--gutter);
+}
+
+/* Screen-reader-only, for the labels that ornament replaces visually. */
+.u-sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* --------------------------------------------------------------------------
+   Scroll reveal
+   Paired with the Reveal component: the component only toggles [data-visible],
+   all timing lives here so reduced-motion can switch it off in one place.
+   -------------------------------------------------------------------------- */
+.js .u-reveal {
+  opacity: 0;
+  transform: translateY(18px);
+  transition:
+    opacity var(--duration-slow) var(--ease),
+    transform var(--duration-slow) var(--ease);
+  transition-delay: var(--reveal-delay, 0ms);
+}
+
+.js .u-reveal[data-visible='true'] {
+  opacity: 1;
+  transform: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .js .u-reveal,
+  .js .u-reveal[data-visible='false'] {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   Focus
+   One visible focus treatment for the whole site, on a gold ring that clears
+   both the paper and the photographic grounds.
+   -------------------------------------------------------------------------- */
+.u-focusable:focus-visible,
+a:focus-visible,
+button:focus-visible,
+select:focus-visible,
+input:focus-visible,
+[tabindex]:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 3px;
+  border-radius: var(--radius-sm);
+}

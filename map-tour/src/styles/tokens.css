@@ -1,0 +1,169 @@
+/* ==========================================================================
+   Design tokens - "sơn mài" (Vietnamese lacquer) heritage system
+   --------------------------------------------------------------------------
+   The palette is inherited from the original stylesheet and kept intact so
+   nothing downstream (admin screens, map markers) shifts colour. What is new
+   here is the *role* layer on top of it: named surfaces, a gold-leaf ornament
+   ramp, a type scale, and a dark "lacquer at night" inversion.
+
+   Three colours carry the whole system, and they are the three pigments of a
+   real sơn mài panel:
+     son ta   #610000  lacquer red   - the single accent, used everywhere
+     thếp vàng #c9a227 leaf gold     - ornament only (rules, seals, hairlines)
+     lá tre   #203200  bamboo green  - the one supporting hue, for "area" sites
+   ========================================================================== */
+
+:root {
+  /* ---- Type ------------------------------------------------------------ */
+  /* Playfair Display and Be Vietnam Pro both ship a full Vietnamese subset,
+     which matters here: stacked diacritics (ễ, ộ, ự) break in most display
+     serifs. Noto Serif stays as the metric-compatible fallback. */
+  --font-display: 'Playfair Display', 'Noto Serif', Georgia, serif;
+  /* Legacy alias: existing rules across index.css reference --font-serif,
+     so it points at the display stack rather than a second loaded family. */
+  --font-serif: var(--font-display);
+  --font-sans: 'Be Vietnam Pro', 'Segoe UI', system-ui, sans-serif;
+
+  /* Fluid display scale. Clamps are sized so a 2-line Vietnamese headline
+     with stacked diacritics still clears its own descenders at every width. */
+  --text-display: clamp(2.5rem, 1.6rem + 3.8vw, 4.75rem);
+  --text-h1: clamp(2rem, 1.4rem + 2.6vw, 3.25rem);
+  --text-h2: clamp(1.6rem, 1.25rem + 1.5vw, 2.35rem);
+  --text-h3: clamp(1.15rem, 1.05rem + 0.45vw, 1.4rem);
+  --text-body-lg: clamp(1.02rem, 0.98rem + 0.2vw, 1.15rem);
+  --text-body: 1rem;
+  --text-sm: 0.875rem;
+  --text-xs: 0.78rem;
+
+  --leading-display: 1.1;   /* never below 1.1: ễ/ộ descenders clip at 1.0 */
+  --leading-heading: 1.18;
+  --leading-body: 1.7;
+
+  --tracking-display: -0.02em;
+  --tracking-label: 0.14em;
+
+  --measure: 68ch;
+
+  /* ---- Ground ---------------------------------------------------------- */
+  /* Giấy dó (poet paper): warm, slightly pink-grey, never pure white. */
+  --color-background: #fff8f6;
+  --color-surface: #fff8f6;
+  --color-surface-container-lowest: #ffffff;
+  --color-surface-container-low: #fff1ec;
+  --color-surface-container: #ffe9e2;
+  --color-surface-container-high: #ffe2d7;
+  --color-surface-container-highest: #ffdbcd;
+
+  --color-on-surface: #360f00;
+  --color-on-surface-variant: #5a403c;
+  --color-outline: #8e706b;
+  --color-outline-variant: #e3beb8;
+
+  /* ---- Lacquer red: the one accent ------------------------------------- */
+  --color-primary: #610000;
+  --color-on-primary: #ffffff;
+  --color-primary-container: #8b0000;
+  --color-on-primary-container: #ff907f;
+
+  /* ---- Gold: ornament role, never a large fill -------------------------- */
+  /* The original #fcd400 is a signal yellow; at panel scale it reads as
+     highlighter, not gold leaf. It is kept for small active marks only, and
+     a muted leaf-gold ramp carries rules, hairlines and seals. */
+  --color-secondary: #705d00;
+  --color-on-secondary: #ffffff;
+  --color-secondary-container: #fcd400;
+  --color-on-secondary-container: #4a3e00;
+
+  --gold: #c9a227;
+  --gold-deep: #8a6d12;
+  --gold-bright: #fcd400;
+  --gold-wash: rgba(201, 162, 39, 0.16);
+
+  /* ---- Bamboo green: supporting hue ------------------------------------ */
+  --color-tertiary: #203200;
+  --color-on-tertiary: #ffffff;
+  --color-tertiary-container: #354910;
+  --color-on-tertiary-container: #9fb873;
+
+  /* ---- Ink, for photographic scrims ------------------------------------ */
+  --ink: #1c0805;
+  --ink-soft: rgba(28, 8, 5, 0.66);
+  --ink-veil: rgba(28, 8, 5, 0.34);
+
+  /* ---- Content panels ---------------------------------------------------
+     The long-form pages lift their prose onto a warm panel a shade above the
+     ground. These were written as literal cream values, which meant they
+     stayed cream under the dark theme while the text on them went light:
+     the reason body copy on /gioi-thieu and /kien-truc was unreadable at
+     night. They are tokens now, so the panel follows the theme. */
+  --color-panel: #fffaf4;
+  --color-panel-veil: rgba(255, 250, 244, 0.95);
+  --color-panel-soft: rgba(255, 241, 236, 0.88);
+  --lacquer-wash: rgba(97, 0, 0, 0.08);
+
+  /* The bamboo band and the image placeholders are full-bleed dark panels
+     carrying light text. --color-tertiary cannot serve them: as a text and
+     icon colour it has to lighten at night, which flipped the band to pale
+     green under white type. These stay dark in both themes. */
+  --lacquer-panel: #610000;
+  --lacquer-panel-edge: #8b2f1b;
+  --on-lacquer-panel: #ffffff;
+
+  --bamboo-panel: #203200;
+  --bamboo-panel-edge: #4c6318;
+  --on-bamboo-panel: #ffffff;
+  --on-bamboo-panel-variant: rgba(255, 255, 255, 0.82);
+
+  /* ---- Shape ------------------------------------------------------------
+     Documented radius rule, applied without exception:
+       surfaces, cards, images, buttons ....... --radius-sm (near-square,
+         echoing brick, wood frames and stone lintels)
+       chips, badges, pills, avatars .......... --radius-full
+     Nothing on a public surface uses an undeclared radius. */
+  --radius-sm: 2px;
+  --radius-md: 2px;
+  --radius-lg: 3px;
+  --radius-full: 9999px;
+
+  /* ---- Elevation -------------------------------------------------------
+     Shadows are tinted to the paper hue, never neutral black. */
+  --shadow-raise: 0 1px 2px rgba(54, 15, 0, 0.06), 0 2px 8px rgba(54, 15, 0, 0.05);
+  --shadow-lift: 0 2px 4px rgba(54, 15, 0, 0.07), 0 12px 28px rgba(54, 15, 0, 0.09);
+  --shadow-panel: 0 18px 50px rgba(54, 15, 0, 0.13);
+
+  /* ---- Rhythm ---------------------------------------------------------- */
+  --space-section: clamp(3.5rem, 2rem + 6vw, 7rem);
+  --space-block: clamp(1.75rem, 1.2rem + 2vw, 3rem);
+  --gutter: clamp(1rem, 0.5rem + 2.2vw, 2.5rem);
+  --shell: 1240px;
+  --shell-wide: 1440px;
+  --shell-text: 74ch;
+
+  /* ---- Motion ----------------------------------------------------------
+     MOTION_INTENSITY 5: entrances and hovers, no perpetual loops.
+     One easing curve for the whole site so every transition feels related. */
+  --ease: cubic-bezier(0.16, 1, 0.3, 1);
+  --duration-fast: 160ms;
+  --duration: 320ms;
+  --duration-slow: 620ms;
+
+  --nav-height: 68px;
+
+  font-family: var(--font-sans);
+  color-scheme: light;
+}
+
+/* --------------------------------------------------------------------------
+   Light only.
+   --------------------------------------------------------------------------
+   This site ships one theme. A heritage publication printed on giấy dó has a
+   paper ground, and the dark inversion that used to live here was a second
+   surface to keep honest for no reward: it had to be re-checked on every
+   page, and the long-form pages had already drifted out of it once.
+
+   `color-scheme: light` above is the part that matters - it stops the browser
+   painting form controls, scrollbars and the canvas from the OS dark palette
+   underneath our own colours. Do not add a `prefers-color-scheme` block here
+   without also auditing index.css, which still carries literal light values
+   in the unmigrated admin rules.
+   -------------------------------------------------------------------------- */

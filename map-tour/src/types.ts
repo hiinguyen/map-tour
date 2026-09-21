@@ -17,7 +17,7 @@ export function toLngLat([lat, lng]: LatLng): [number, number] {
   return [lng, lat];
 }
 
-interface SitePanorama {
+export interface SitePanorama {
   url: string;
   attribution?: string;
 }

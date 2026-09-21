@@ -19,6 +19,11 @@ export interface DownloadedFile {
   buffer: Buffer;
   extension: string;
   kind: DownloadedKind;
+  // Pixel size of the decoded image (null for video/PDF, or when ffprobe
+  // can't read it) — used by isEquirectangular() to tell a real 360° photo
+  // from an ordinary one instead of trusting the workbook's label.
+  width: number | null;
+  height: number | null;
 }
 
 const HEIC_EXTENSIONS = new Set(['heic', 'heif']);
@@ -66,6 +71,48 @@ async function transcodeHeicToJpeg(buffer: Buffer): Promise<Buffer> {
   }
 }
 
+// Equirectangular 360° photos are always exactly 2:1. Surveyors' "360" cell
+// labels are not reliable on their own — several ordinary detail shots (chân
+// tảng, bát hương, mái, nền lát gạch) sit on rows whose label or neighbouring
+// boilerplate mentions 360, and they were imported as kind='panorama' before
+// this check existed (see migrations/014_fix_non_panorama_media_kind.sql).
+// Measuring the real pixels is the only signal that separated the two
+// cleanly across all six workbooks: every genuine panorama here is 2:1 to
+// within a rounding pixel, every false positive was 1.90-2.09.
+const EQUIRECTANGULAR_RATIO_TOLERANCE = 0.02;
+
+export function isEquirectangular(file: DownloadedFile): boolean {
+  if (file.kind !== 'anh' || !file.width || !file.height) return false;
+  return Math.abs(file.width / file.height - 2) <= EQUIRECTANGULAR_RATIO_TOLERANCE;
+}
+
+// ffprobe rather than a new image dependency: ffmpeg is already required here
+// for the HEIC transcode above, and it reads every format this importer
+// accepts. Returns nulls (never throws) so a probe failure only costs the
+// panorama classification, not the whole download.
+async function probeDimensions(buffer: Buffer, extension: string): Promise<{ width: number | null; height: number | null }> {
+  const tmpPath = path.join(os.tmpdir(), `drive-probe-${Date.now()}-${Math.random().toString(36).slice(2)}.${extension}`);
+  await fs.writeFile(tmpPath, buffer);
+  try {
+    const { stdout } = await execFileAsync('ffprobe', [
+      '-v', 'error',
+      '-select_streams', 'v:0',
+      '-show_entries', 'stream=width,height',
+      '-of', 'csv=s=x:p=0',
+      tmpPath,
+    ]);
+    const [width, height] = stdout.trim().split('x').map((value) => Number.parseInt(value, 10));
+    return {
+      width: Number.isFinite(width) ? width : null,
+      height: Number.isFinite(height) ? height : null,
+    };
+  } catch {
+    return { width: null, height: null };
+  } finally {
+    await fs.rm(tmpPath, { force: true });
+  }
+}
+
 function classifyKind(extension: string): DownloadedKind | null {
   if (VIDEO_EXTENSIONS.has(extension)) return 'video';
   if (DRAWING_EXTENSIONS.has(extension)) return 'ban_ve';
@@ -94,10 +141,11 @@ export async function downloadDriveFile(fileId: string): Promise<DownloadedFile 
 
   if (HEIC_EXTENSIONS.has(extension)) {
     const jpeg = await transcodeHeicToJpeg(buffer);
-    return { buffer: jpeg, extension: 'jpg', kind: 'anh' };
+    return { buffer: jpeg, extension: 'jpg', kind: 'anh', ...(await probeDimensions(jpeg, 'jpg')) };
   }
 
   const kind = classifyKind(extension);
   if (!kind) return null;
-  return { buffer, extension, kind };
+  const { width, height } = kind === 'anh' ? await probeDimensions(buffer, extension) : { width: null, height: null };
+  return { buffer, extension, kind, width, height };
 }

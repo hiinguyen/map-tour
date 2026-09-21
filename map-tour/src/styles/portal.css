@@ -1,0 +1,567 @@
+/* ==========================================================================
+   Portal - the homepage index of villages
+   --------------------------------------------------------------------------
+   Replaces a centred hero over a gradient-washed photo plus three equal
+   cards. The hero is now an asymmetric split (type on paper, photography
+   holding the right edge) and the index leads with one feature village before
+   the remaining villages settle into an even grid.
+   ========================================================================== */
+
+.portal {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  min-height: 100%;
+  background-color: var(--color-background);
+  background-image: url('/heritage-bg-pattern.svg');
+  background-repeat: no-repeat;
+  background-position: center top;
+  background-size: 100% auto;
+}
+
+/* --------------------------------------------------------------------------
+   Masthead
+   -------------------------------------------------------------------------- */
+.portal__header {
+  border-bottom: 1px solid var(--color-outline-variant);
+}
+
+.portal__header-inner {
+  display: flex;
+  align-items: center;
+  min-height: var(--nav-height);
+  max-width: var(--shell-wide);
+  margin-inline: auto;
+  padding-inline: var(--gutter);
+}
+
+.portal__brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.7rem;
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 1.22rem;
+  letter-spacing: var(--tracking-display);
+  color: var(--color-primary);
+  text-decoration: none;
+}
+
+.portal__brand .motif-seal {
+  width: 1.9rem;
+  height: 1.9rem;
+  font-size: 0.85rem;
+}
+
+/* --------------------------------------------------------------------------
+   Hero - asymmetric split
+   Sized to sit inside the first viewport alongside the masthead rather than
+   filling it, so the village index starts revealing itself immediately.
+   -------------------------------------------------------------------------- */
+.portal__hero {
+  display: grid;
+  grid-template-columns: minmax(0, 0.95fr) minmax(0, 1.05fr);
+  align-items: stretch;
+  gap: clamp(2rem, 4vw, 4.5rem);
+  max-width: var(--shell-wide);
+  margin-inline: auto;
+  padding: clamp(2.5rem, 1.5rem + 3vw, 5rem) 0 clamp(2.5rem, 2vw, 4rem) var(--gutter);
+}
+
+.portal__hero-content {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 1.5rem;
+  padding-block: clamp(1rem, 3vw, 3rem);
+}
+
+.portal__hero-content h1 {
+  margin: 0;
+  font-size: var(--text-display);
+  font-weight: 700;
+  line-height: var(--leading-display);
+  /* Reserve for the descender on "Phá" at display weight. */
+  padding-bottom: 0.08em;
+  color: var(--color-primary);
+}
+
+.portal__hero-lead {
+  margin: 0;
+  max-width: 34ch;
+  font-size: var(--text-body-lg);
+  line-height: var(--leading-body);
+  color: var(--color-on-surface-variant);
+}
+
+.portal__hero-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  flex: none;
+  padding: 0.95rem 1.9rem;
+  font-family: var(--font-sans);
+  font-size: 0.95rem;
+  font-weight: 600;
+  white-space: nowrap;
+  color: var(--color-on-primary);
+  background: var(--color-primary);
+  border: 1px solid var(--color-primary);
+  border-radius: var(--radius-sm);
+  text-decoration: none;
+  box-shadow: var(--shadow-raise);
+  transition:
+    background var(--duration) var(--ease),
+    transform var(--duration-fast) var(--ease),
+    box-shadow var(--duration) var(--ease);
+}
+
+.portal__hero-cta:hover {
+  background: var(--color-primary-container);
+  box-shadow: var(--shadow-lift);
+}
+
+.portal__hero-cta:active {
+  transform: translateY(1px);
+}
+
+.portal__hero-cta span {
+  transition: transform var(--duration) var(--ease);
+}
+
+.portal__hero-cta:hover span {
+  transform: translateX(3px);
+}
+
+/* The photograph runs to the right edge of the window: the asymmetry that
+   replaces the old centred composition. */
+.portal__hero-media {
+  position: relative;
+  min-height: clamp(320px, 48vh, 560px);
+  border-top-left-radius: var(--radius-sm);
+  border-bottom-left-radius: var(--radius-sm);
+  overflow: hidden;
+  background: var(--color-surface-container);
+}
+
+.portal__hero-media img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+/* Gold inner frame, as on a lacquer panel. */
+.portal__hero-media::after {
+  content: '';
+  position: absolute;
+  inset: 10px;
+  border: 1px solid rgba(201, 162, 39, 0.5);
+  pointer-events: none;
+}
+
+/* --------------------------------------------------------------------------
+   Village index
+   -------------------------------------------------------------------------- */
+.portal__villages {
+  max-width: var(--shell-wide);
+  margin-inline: auto;
+  padding: var(--space-section) var(--gutter) 0;
+}
+
+.portal__villages-heading {
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+  max-width: 52ch;
+  margin-bottom: var(--space-block);
+}
+
+.portal__villages-heading h2 {
+  margin: 0;
+  font-size: var(--text-h1);
+  color: var(--color-primary);
+}
+
+.portal__villages-heading p {
+  margin: 0;
+  max-width: var(--measure);
+  color: var(--color-on-surface-variant);
+}
+
+.portal__status {
+  margin: 0 0 1.5rem;
+  color: var(--color-on-surface-variant);
+}
+
+.portal__status--error {
+  color: var(--color-primary-container);
+  font-weight: 500;
+}
+
+/* ---- Skeletons -----------------------------------------------------------
+   Shaped like the cards they stand in for, so the grid does not reflow when
+   the data lands. */
+.portal__skeleton-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(clamp(250px, 26vw, 320px), 1fr));
+  gap: clamp(1.25rem, 2vw, 2rem);
+}
+
+.portal__skeleton {
+  border: 1px solid var(--color-outline-variant);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  background: var(--color-surface-container-lowest);
+}
+
+.portal__skeleton-media {
+  aspect-ratio: 4 / 3;
+  background: var(--color-surface-container);
+}
+
+.portal__skeleton-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+  padding: 1.25rem;
+}
+
+.portal__skeleton-line {
+  height: 0.75rem;
+  border-radius: var(--radius-full);
+  background: var(--color-surface-container);
+}
+
+.portal__skeleton-line--title {
+  height: 1.15rem;
+  width: 62%;
+}
+
+.portal__skeleton-line--short {
+  width: 40%;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+
+  .portal__skeleton-media,
+  .portal__skeleton-line {
+    animation: portal-shimmer 1.4s var(--ease) infinite;
+  }
+}
+
+@keyframes portal-shimmer {
+
+  0%,
+  100% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0.55;
+  }
+}
+
+/* ---- Empty state --------------------------------------------------------- */
+.portal__empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  padding: clamp(3rem, 8vw, 6rem) var(--gutter);
+  text-align: center;
+  border: 1px solid var(--color-outline-variant);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface-container-lowest);
+}
+
+.portal__empty h3 {
+  margin: 0;
+  font-size: var(--text-h3);
+  color: var(--color-primary);
+}
+
+.portal__empty p {
+  margin: 0;
+  max-width: 44ch;
+  color: var(--color-on-surface-variant);
+}
+
+/* ---- Feature village -----------------------------------------------------
+   The first village is given a horizontal split so the index does not open on
+   a row of identical tiles. -------------------------------------------------- */
+.portal__feature {
+  display: grid;
+  grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
+  align-items: stretch;
+  margin-bottom: clamp(1.25rem, 2vw, 2rem);
+  border: 1px solid var(--color-outline-variant);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  background: var(--color-surface-container-lowest);
+  text-decoration: none;
+  color: inherit;
+  transition:
+    border-color var(--duration) var(--ease),
+    box-shadow var(--duration) var(--ease);
+}
+
+.portal__feature:hover {
+  border-color: var(--gold);
+  box-shadow: var(--shadow-lift);
+}
+
+.portal__feature-media {
+  position: relative;
+  /* Wider than the grid cards: the feature is a landscape establishing shot,
+     and 4:3 at this column width would run past 500px tall. */
+  aspect-ratio: 16 / 10;
+  overflow: hidden;
+}
+
+.portal__feature-media img,
+.portal__feature-media .portal__village-fallback {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.portal__feature-media img {
+  transition: transform var(--duration-slow) var(--ease);
+}
+
+.portal__feature:hover .portal__feature-media img {
+  transform: scale(1.03);
+}
+
+.portal__feature-body {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 1rem;
+  padding: clamp(1.75rem, 3vw, 3.25rem);
+}
+
+/* The grid cards push their link to the card foot with `margin-top: auto`.
+   In the feature the block is vertically centred instead, so that auto margin
+   would open a gap in the middle of the composition. */
+.portal__feature-body .portal__village-link {
+  margin-top: 0.4rem;
+  padding-top: 0;
+}
+
+.portal__feature-body h3 {
+  margin: 0;
+  font-size: var(--text-h2);
+  color: var(--color-primary);
+}
+
+/* --------------------------------------------------------------------------
+   Village cards
+   -------------------------------------------------------------------------- */
+.portal__village-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(clamp(250px, 26vw, 320px), 1fr));
+  gap: clamp(1.25rem, 2vw, 2rem);
+}
+
+.portal__village-card {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--color-outline-variant);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  background: var(--color-surface-container-lowest);
+  color: inherit;
+  text-decoration: none;
+  transition:
+    border-color var(--duration) var(--ease),
+    box-shadow var(--duration) var(--ease),
+    transform var(--duration) var(--ease);
+}
+
+.portal__village-card:hover {
+  border-color: var(--gold);
+  box-shadow: var(--shadow-lift);
+  transform: translateY(-2px);
+}
+
+.portal__village-card:active {
+  transform: translateY(0);
+}
+
+.portal__village-media {
+  position: relative;
+  aspect-ratio: 4 / 3;
+  overflow: hidden;
+  background: var(--color-surface-container);
+}
+
+.portal__village-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  transition: transform var(--duration-slow) var(--ease);
+}
+
+.portal__village-card:hover .portal__village-image {
+  transform: scale(1.04);
+}
+
+/* A village with no photograph gets the carved grille and its seal rather
+   than a blank tile with a letter floating in it. */
+.portal__village-fallback {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  height: 100%;
+}
+
+.portal__village-fallback .motif-seal {
+  width: 3.25rem;
+  height: 3.25rem;
+  font-size: 1.4rem;
+}
+
+.portal__village-body {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.6rem;
+  padding: 1.35rem 1.35rem 1.5rem;
+  flex: 1;
+}
+
+.portal__village-body h3 {
+  margin: 0;
+  font-size: var(--text-h3);
+  color: var(--color-primary);
+}
+
+.portal__village-location {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.4rem;
+  margin: 0;
+  font-size: var(--text-xs);
+  line-height: 1.5;
+  color: var(--color-on-surface-variant);
+}
+
+.portal__village-location svg {
+  flex: none;
+  margin-top: 0.22em;
+  color: var(--gold-deep);
+}
+
+.portal__village-blurb {
+  margin: 0;
+  font-size: var(--text-sm);
+  line-height: 1.6;
+  color: var(--color-on-surface-variant);
+}
+
+.portal__village-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  margin-top: auto;
+  padding-top: 0.9rem;
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--color-primary);
+}
+
+.portal__village-link span {
+  transition: transform var(--duration) var(--ease);
+}
+
+.portal__village-card:hover .portal__village-link span,
+.portal__feature:hover .portal__village-link span {
+  transform: translateX(4px);
+}
+
+@media (prefers-reduced-motion: reduce) {
+
+  .portal__village-card,
+  .portal__village-image,
+  .portal__feature-media img,
+  .portal__village-link span,
+  .portal__hero-cta,
+  .portal__hero-cta span {
+    transition: none;
+  }
+
+  .portal__village-card:hover {
+    transform: none;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   Footer
+   -------------------------------------------------------------------------- */
+.portal__footer {
+  margin-top: var(--space-section);
+  border-top: 1px solid var(--color-outline-variant);
+  background: var(--color-surface-container-low);
+}
+
+.portal__footer-inner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+  max-width: var(--shell-wide);
+  margin-inline: auto;
+  padding: 2rem var(--gutter);
+  font-size: var(--text-sm);
+  color: var(--color-on-surface-variant);
+}
+
+.portal__footer-inner p {
+  margin: 0;
+  max-width: 62ch;
+}
+
+/* --------------------------------------------------------------------------
+   Mobile: every split collapses to a single column.
+   -------------------------------------------------------------------------- */
+@media (max-width: 900px) {
+  .portal__hero {
+    grid-template-columns: 1fr;
+    gap: 2rem;
+    padding: 2.5rem var(--gutter) 1rem;
+  }
+
+  .portal__hero-content {
+    padding-block: 0;
+  }
+
+  .portal__hero-media {
+    min-height: 260px;
+    border-radius: var(--radius-sm);
+  }
+
+  .portal__feature {
+    grid-template-columns: 1fr;
+  }
+
+  .portal__feature-media {
+    min-height: 0;
+    aspect-ratio: 16 / 10;
+  }
+}
+
+@media (max-width: 560px) {
+
+  .portal__village-grid,
+  .portal__skeleton-grid {
+    grid-template-columns: 1fr;
+  }
+}

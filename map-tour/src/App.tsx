@@ -28,6 +28,9 @@ const AdminGenericPage = lazy(() =>
 const VillageIntroductionPage = lazy(() =>
   import('./pages/VillageIntroductionPage').then((m) => ({ default: m.VillageIntroductionPage })),
 );
+const LandmarkDetailPage = lazy(() =>
+  import('./pages/LandmarkDetailPage').then((m) => ({ default: m.LandmarkDetailPage })),
+);
 const ArchitectureHighlightsPage = lazy(() =>
   import('./pages/ArchitectureHighlightsPage').then((m) => ({ default: m.ArchitectureHighlightsPage })),
 );
@@ -35,6 +38,9 @@ const ArchitectureHighlightsPage = lazy(() =>
 export function App() {
   return (
     <div className="app">
+      {/* Paper tooth over the whole document: fixed and non-interactive so the
+          texture composites once instead of repainting as the page scrolls. */}
+      <div className="motif-grain" aria-hidden="true" />
       <Suspense fallback={<p className="app__route-loading">Đang tải...</p>}>
         <Routes>
           <Route path="/" element={<VillagesPortalPage />} />
@@ -43,6 +49,7 @@ export function App() {
             <Route path={APP_ROUTES.villageIntroduction} element={<VillageIntroductionPage />} />
             <Route path="map" element={<MapPage />} />
             <Route path="di-san" element={<HeritageListPage />} />
+            <Route path="di-san/:landmarkId" element={<LandmarkDetailPage />} />
             <Route path={APP_ROUTES.architecture} element={<ArchitectureHighlightsPage />} />
             <Route path="360" element={<Experience3DPage />} />
           </Route>

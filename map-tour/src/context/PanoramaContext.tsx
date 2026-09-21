@@ -16,7 +16,7 @@ export function PanoramaProvider({ children }: { children: ReactNode }) {
   return (
     <PanoramaContext.Provider value={{ openPanorama: setPanoramaSiteId }}>
       {children}
-      <PanoramaModal site={panoramaSite} onClose={() => setPanoramaSiteId(null)} />
+      <PanoramaModal subject={panoramaSite} onClose={() => setPanoramaSiteId(null)} />
     </PanoramaContext.Provider>
   );
 }

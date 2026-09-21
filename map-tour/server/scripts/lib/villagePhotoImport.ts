@@ -11,7 +11,7 @@ import path from 'node:path';
 import type { PoolClient, Pool } from 'pg';
 import { extractLabeledRows, valueByLastSegment } from '../../src/lib/excelExtract.js';
 import { slugifyVietnamese } from '../../src/lib/slugify.js';
-import { driveFileId, downloadDriveFile } from './drivePhoto.js';
+import { driveFileId, downloadDriveFile, isEquirectangular } from './drivePhoto.js';
 
 export type OwnerType = 'villages' | 'sites' | 'heritage_buildings' | 'decorative_art_items' | 'craft_products';
 
@@ -113,7 +113,13 @@ export function meaningfulCaption(...candidates: Array<string | null | undefined
 const DECORATIVE_META_SUBJECTS = new Set(['sở hữu']);
 
 async function resolveVillageId(client: PoolClient, name: string): Promise<string | null> {
-  const result = await client.query<{ id: string }>('SELECT id FROM villages WHERE name = $1', [name]);
+  // migrations/022_fix_spelling_and_capitalization.sql prefixed every village
+  // name with "Làng " after these VillagePhotoConfig.villageName values were
+  // written (some still lack it, or differ only in casing) — try both forms.
+  const result = await client.query<{ id: string }>(
+    'SELECT id FROM villages WHERE lower(name) = lower($1) OR lower(name) = lower($2)',
+    [name, `Làng ${name}`],
+  );
   return result.rows[0]?.id ?? null;
 }
 async function resolveSiteId(client: PoolClient, villageId: string, name: string): Promise<string | null> {
@@ -393,7 +399,17 @@ async function processTask(
       await fs.writeFile(absolutePath, downloaded.buffer);
     }
 
-    const kind = task.isPanorama && downloaded.kind === 'anh' ? 'panorama' : downloaded.kind;
+    // Geometry, not the workbook label, decides 360°: see isEquirectangular()
+    // in lib/drivePhoto.ts. Surveyors' "360" labels produced both false
+    // positives and misses across these workbooks (migrations/014), so the
+    // real pixels win — a disagreement is logged as a data-entry warning.
+    const isPanorama = isEquirectangular(downloaded);
+    if (task.isPanorama !== isPanorama) {
+      console.warn(
+        `  [nhãn lệch] ${task.ownerLabel}: workbook ghi "${task.isPanorama ? '360' : 'ảnh thường'}" nhưng ảnh thật là "${isPanorama ? '360 (2:1)' : 'ảnh thường'}" — lấy theo ảnh thật.`,
+      );
+    }
+    const kind = isPanorama ? 'panorama' : downloaded.kind;
 
     if (!dryRun) {
       const inserted = await client.query<{ id: string }>(

@@ -106,7 +106,6 @@ export function VillageNameMeaning({ village }: { village: VillageDetails }) {
     <section className="village-section village-name-meaning" aria-labelledby="village-name-title">
       <div className="village-name-meaning__mark" aria-hidden="true">{village.name.split(/\s+/).join(' · ')}</div>
       <div>
-        <span>Theo tư liệu khảo sát</span>
         <h2 id="village-name-title">Danh xưng {village.name}</h2>
         <blockquote>{village.nameMeaning}</blockquote>
       </div>
@@ -144,7 +143,6 @@ export function VillageCulturalStories({ village }: { village: VillageDetails })
   return (
     <section className="village-section" aria-labelledby="village-cultural-stories-title">
       <div className="village-section__heading village-section__heading--center">
-        <span>Nếp làng còn lưu giữ</span>
         <h2 id="village-cultural-stories-title">Phong tục và nghĩa tình {village.name}</h2>
       </div>
       <div className="village-story-grid">
@@ -172,7 +170,6 @@ export function VillageLandscape({ village }: { village: VillageDetails }) {
   return (
     <section className="village-section village-landscape" aria-labelledby="village-landscape-title">
       <div className="village-landscape__content">
-        <span>Không gian truyền thống</span>
         <h2 id="village-landscape-title">Thiên nhiên và hình thái làng</h2>
         {village.naturalFeatures && <TextParagraphs text={village.naturalFeatures} />}
         {village.morphologyDescription && <TextParagraphs text={village.morphologyDescription} />}
@@ -208,7 +205,6 @@ export function VillageArchitecture({ village }: { village: VillageDetails }) {
   return (
     <section className="village-section" aria-labelledby="village-architecture-title">
       <div className="village-section__heading village-section__heading--center">
-        <span>Công trình còn lưu dấu</span>
         <h2 id="village-architecture-title">Kiến trúc độc đáo</h2>
       </div>
       <div className="village-architecture-grid">
@@ -256,7 +252,6 @@ export function VillageCulture({ sites, villageSlug }: { sites: TourSite[]; vill
   return (
     <section className="village-section" aria-labelledby="village-culture-title">
       <div className="village-section__heading village-section__heading--center">
-        <span>Dấu ấn còn lại</span>
         <h2 id="village-culture-title">Di sản và không gian văn hóa</h2>
       </div>
       <div className="village-sites-grid">
@@ -294,7 +289,6 @@ export function TraditionalCraft({ village }: { village: VillageDetails }) {
     <section className="village-section village-craft" aria-labelledby="village-craft-title">
       {craftSite?.cover && <SafeImage src={craftSite.cover.url} alt={craftSite.name} className="village-craft__image" />}
       <div className="village-craft__content">
-        <span>Nghề truyền thống</span>
         <h2 id="village-craft-title">Nghề truyền thống {village.name}</h2>
         {village.traditionalCraft ? <TextParagraphs text={village.traditionalCraft} /> : craftSite?.description && <p>{craftSite.description}</p>}
         {village.mainOccupations.length > 0 && (
@@ -371,7 +365,6 @@ export function VillageGallery({ village }: { village: VillageDetails }) {
   return (
     <section className="village-section" aria-labelledby="village-gallery-title">
       <div className="village-section__heading">
-        <span>Góc nhìn {village.name}</span>
         <h2 id="village-gallery-title">Thư viện hình ảnh</h2>
       </div>
       <div className="village-gallery">
@@ -394,7 +387,6 @@ export function VillageMapSection({ village }: { village: VillageDetails }) {
   return (
     <section className="village-section village-location" aria-labelledby="village-location-title">
       <div className="village-location__copy">
-        <span>Vị trí và hành trình</span>
         <h2 id="village-location-title">{village.name} trên bản đồ</h2>
         {village.adminLocation && <p>{village.adminLocation}</p>}
         <Link className="village-button village-button--primary" to={villageMapPath(village.slug)}>Mở bản đồ di sản</Link>

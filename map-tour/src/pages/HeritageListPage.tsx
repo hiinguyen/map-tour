@@ -1,9 +1,15 @@
 import { useMemo, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import { Reveal } from '../components/Reveal';
 import { useSites } from '../context/SitesContext';
 import { usePanorama } from '../context/PanoramaContext';
 import { useVillage } from '../context/VillageContext';
+import { villageLandmarkPath } from '../routes';
 import type { TourSite } from '../types';
+
+function sealCharacter(name: string): string {
+  return name.trim().charAt(0).toUpperCase();
+}
 
 const KIND_FILTERS: Array<{ value: 'all' | TourSite['kind']; label: string }> = [
   { value: 'all', label: 'Tất cả' },
@@ -50,26 +56,50 @@ export function HeritageListPage() {
       </div>
       {isLoading && <p className="heritage-list__status">Đang tải dữ liệu...</p>}
       {error && <p className="heritage-list__status heritage-list__status--error">{error}</p>}
+      {!isLoading && !error && filteredSites.length === 0 && (
+        <div className="heritage-list__empty">
+          <span className="motif-seal" aria-hidden="true">
+            ?
+          </span>
+          <h2>Chưa có điểm nào trong nhóm này</h2>
+          <p>Thử chọn nhóm khác, hoặc xem tất cả điểm di sản của làng.</p>
+        </div>
+      )}
       <div className="heritage-list__grid">
-        {filteredSites.map((site) => (
-          <article key={site.id} className="heritage-card">
-            {site.cover ? (
-              <img className="heritage-card__image" src={site.cover.url} alt={site.name} />
-            ) : (
-              <div
-                className={`heritage-card__tile heritage-card__tile--${site.kind}`}
-                role="img"
-                aria-label={`Chưa có ảnh đại diện cho ${site.name}`}
-              >
-                <span aria-hidden="true">{site.name.charAt(0)}</span>
-                <small>Chưa có ảnh đại diện</small>
-              </div>
-            )}
+        {filteredSites.map((site, index) => (
+          <Reveal key={site.id} as="article" index={index} className="heritage-card">
+            <div className="heritage-card__media">
+              {site.cover ? (
+                <img
+                  className="heritage-card__image"
+                  src={site.cover.url}
+                  alt={site.name}
+                  loading="lazy"
+                  decoding="async"
+                />
+              ) : (
+                <div
+                  className="heritage-card__tile motif-lattice"
+                  role="img"
+                  aria-label={`Chưa có ảnh đại diện cho ${site.name}`}
+                >
+                  <span className="motif-seal" aria-hidden="true">
+                    {sealCharacter(site.name)}
+                  </span>
+                </div>
+              )}
+            </div>
             <div className="heritage-card__body">
-              <span className={`heritage-card__badge heritage-card__badge--${site.kind}`}>
+              <span
+                className={
+                  site.kind === 'area' ? 'heritage-card__badge heritage-card__badge--area' : 'heritage-card__badge'
+                }
+              >
                 {site.kind === 'point' ? 'Điểm di tích' : 'Khu vực'}
               </span>
-              <h2>{site.name}</h2>
+              <h2>
+                <Link to={villageLandmarkPath(village?.slug ?? '', site.id)}>{site.name}</Link>
+              </h2>
               <p className="heritage-card__category">{site.category}</p>
               <p className="heritage-card__description">{site.description}</p>
               <div className="heritage-card__actions">
@@ -83,7 +113,7 @@ export function HeritageListPage() {
                 )}
               </div>
             </div>
-          </article>
+          </Reveal>
         ))}
       </div>
     </div>

@@ -1,0 +1,448 @@
+/* ==========================================================================
+   Village hub and shared village chrome
+   --------------------------------------------------------------------------
+   `/lang/:slug` is the hub a visitor lands on from the nav; `/lang/:slug/
+   gioi-thieu` is the long-form introduction. They used to look like two
+   attempts at the same page. The hub is now short and directional: who the
+   village is, what is worth seeing, where to go next.
+   ========================================================================== */
+
+.home {
+  position: relative;
+  z-index: 2;
+  padding-bottom: var(--space-section);
+}
+
+/* --------------------------------------------------------------------------
+   Hub hero
+   Left-aligned inside the shell rather than centred, matching the homepage.
+   -------------------------------------------------------------------------- */
+.home__hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 0.85fr);
+  align-items: center;
+  gap: clamp(1.75rem, 3.5vw, 3.5rem);
+  max-width: var(--shell);
+  margin-inline: auto;
+  /* Capped well under the 6rem ceiling so the hero does not float down the
+     viewport under a sticky nav that already costs 68px. */
+  padding: clamp(2.5rem, 2rem + 2.5vw, 4rem) var(--gutter) 0;
+}
+
+/* A village with no cover photograph collapses to a single column rather than
+   leaving an empty half. */
+.home__hero:not(:has(.home__hero-media)) {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.home__hero-content {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 1.25rem;
+}
+
+.home__hero-media {
+  position: relative;
+  aspect-ratio: 4 / 3;
+  overflow: hidden;
+  border-radius: var(--radius-sm);
+  background: var(--color-surface-container);
+}
+
+.home__hero-media img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+/* The same gold inner frame the homepage hero carries. */
+.home__hero-media::after {
+  content: '';
+  position: absolute;
+  inset: 10px;
+  border: 1px solid rgba(201, 162, 39, 0.45);
+  pointer-events: none;
+}
+
+.home__hero h1 {
+  margin: 0;
+  font-size: var(--text-display);
+  font-weight: 700;
+  padding-bottom: 0.06em;
+  color: var(--color-primary);
+}
+
+.home__hero-lead {
+  margin: 0;
+  max-width: 52ch;
+  font-size: var(--text-body-lg);
+  color: var(--color-on-surface-variant);
+}
+
+.home__hero-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-top: 0.5rem;
+}
+
+.home__cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.8rem 1.5rem;
+  font-family: var(--font-sans);
+  font-size: 0.9rem;
+  font-weight: 600;
+  white-space: nowrap;
+  border: 1px solid var(--color-primary);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  text-decoration: none;
+  transition:
+    background var(--duration) var(--ease),
+    color var(--duration) var(--ease),
+    transform var(--duration-fast) var(--ease);
+}
+
+.home__cta--primary {
+  background: var(--color-primary);
+  color: var(--color-on-primary);
+}
+
+.home__cta--primary:hover {
+  background: var(--color-primary-container);
+  border-color: var(--color-primary-container);
+}
+
+.home__cta--story,
+.home__cta--ghost {
+  background: transparent;
+  color: var(--color-primary);
+}
+
+.home__cta--story:hover,
+.home__cta--ghost:hover {
+  background: var(--color-surface-container-high);
+}
+
+.home__cta:active {
+  transform: translateY(1px);
+}
+
+/* --------------------------------------------------------------------------
+   Village facts
+   Hairline-separated columns instead of three boxed cards: the facts are one
+   related set, so a shared rule reads better than three containers.
+   -------------------------------------------------------------------------- */
+.home__values {
+  max-width: var(--shell);
+  margin-inline: auto;
+  padding: var(--space-block) var(--gutter) 0;
+}
+
+.home__values-heading {
+  margin: 0 0 1.25rem;
+  font-size: var(--text-h3);
+  color: var(--color-primary);
+}
+
+.home__values-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr));
+  gap: 0;
+  border-top: 1px solid var(--gold);
+}
+
+.home__value {
+  padding: 1.25rem 1.5rem 1.4rem 0;
+}
+
+.home__value+.home__value {
+  padding-left: 1.5rem;
+  border-left: 1px solid var(--color-outline-variant);
+}
+
+.home__value h3 {
+  margin: 0 0 0.4rem;
+  font-family: var(--font-sans);
+  font-size: 0.66rem;
+  font-weight: 700;
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+  color: var(--gold-deep);
+}
+
+.home__value p {
+  margin: 0;
+  font-size: var(--text-sm);
+  line-height: 1.6;
+  color: var(--color-on-surface);
+}
+
+/* --------------------------------------------------------------------------
+   Featured landmarks
+   -------------------------------------------------------------------------- */
+.home__featured {
+  max-width: var(--shell);
+  margin-inline: auto;
+  padding: var(--space-section) var(--gutter) 0;
+}
+
+.home__featured-heading {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: var(--space-block);
+}
+
+.home__featured-heading h2 {
+  margin: 0;
+  font-size: var(--text-h1);
+  color: var(--color-primary);
+}
+
+.home__link {
+  padding: 0;
+  font-family: var(--font-sans);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--color-primary);
+  background: none;
+  border: 0;
+  border-bottom: 1px solid var(--gold);
+  cursor: pointer;
+  transition: color var(--duration-fast) var(--ease);
+}
+
+.home__link:hover {
+  color: var(--color-primary-container);
+}
+
+.home__status {
+  margin: 0 0 1.25rem;
+  color: var(--color-on-surface-variant);
+}
+
+.home__status--error {
+  color: var(--color-primary-container);
+  font-weight: 500;
+}
+
+.home__featured-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(clamp(250px, 26vw, 320px), 1fr));
+  gap: clamp(1.25rem, 2vw, 2rem);
+}
+
+.home__featured-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border: 1px solid var(--color-outline-variant);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface-container-lowest);
+  transition:
+    border-color var(--duration) var(--ease),
+    box-shadow var(--duration) var(--ease);
+}
+
+.home__featured-card:hover {
+  border-color: var(--gold);
+  box-shadow: var(--shadow-lift);
+}
+
+.home__featured-media {
+  position: relative;
+  aspect-ratio: 4 / 3;
+  overflow: hidden;
+  background: var(--color-surface-container);
+}
+
+.home__featured-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  transition: transform var(--duration-slow) var(--ease);
+}
+
+.home__featured-card:hover .home__featured-image {
+  transform: scale(1.04);
+}
+
+.home__featured-placeholder {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  height: 100%;
+}
+
+.home__featured-placeholder .motif-seal {
+  width: 3rem;
+  height: 3rem;
+  font-size: 1.3rem;
+}
+
+.home__featured-body {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.55rem;
+  flex: 1;
+  padding: 1.25rem 1.35rem 1.4rem;
+}
+
+.home__featured-badge {
+  padding: 0.24rem 0.65rem;
+  font-size: 0.68rem;
+  font-weight: 600;
+  border-radius: var(--radius-full);
+  background: var(--color-surface-container-high);
+  color: var(--color-on-surface-variant);
+}
+
+.home__featured-badge--area {
+  background: var(--color-tertiary-container);
+  color: var(--color-on-tertiary-container);
+}
+
+.home__featured-card h3 {
+  margin: 0;
+  font-size: var(--text-h3);
+}
+
+/* The card title is the link to the landmark record; the stretched
+   pseudo-element makes the whole card clickable without nesting an anchor
+   around the secondary buttons. */
+.home__featured-card h3 a {
+  color: var(--color-primary);
+  text-decoration: none;
+}
+
+.home__featured-card h3 a::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+}
+
+.home__featured-card p {
+  margin: 0;
+  font-size: var(--text-sm);
+  line-height: 1.6;
+  color: var(--color-on-surface-variant);
+}
+
+.home__featured-actions {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: auto;
+  padding-top: 0.9rem;
+}
+
+.home__featured-actions button {
+  padding: 0.42rem 0.85rem;
+  font-family: var(--font-sans);
+  font-size: 0.76rem;
+  font-weight: 600;
+  color: var(--color-primary);
+  background: transparent;
+  border: 1px solid var(--color-outline-variant);
+  border-radius: var(--radius-full);
+  cursor: pointer;
+  transition:
+    background var(--duration-fast) var(--ease),
+    border-color var(--duration-fast) var(--ease),
+    color var(--duration-fast) var(--ease);
+}
+
+.home__featured-actions button:hover {
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+  color: var(--color-on-primary);
+}
+
+.home__featured-panorama {
+  border-color: var(--gold);
+}
+
+.home__footer-note {
+  max-width: var(--shell);
+  margin: var(--space-section) auto 0;
+  padding: 1.5rem var(--gutter) 0;
+  border-top: 1px solid var(--color-outline-variant);
+  font-size: var(--text-sm);
+  color: var(--color-on-surface-variant);
+}
+
+@media (prefers-reduced-motion: reduce) {
+
+  .home__cta,
+  .home__featured-card,
+  .home__featured-image,
+  .home__featured-actions button {
+    transition: none;
+  }
+}
+
+@media (max-width: 900px) {
+  .home__hero {
+    grid-template-columns: 1fr;
+    gap: 1.75rem;
+  }
+
+  .home__hero-media {
+    aspect-ratio: 16 / 10;
+  }
+}
+
+@media (max-width: 700px) {
+  .home__value+.home__value {
+    padding-left: 0;
+    border-left: 0;
+    border-top: 1px solid var(--color-outline-variant);
+  }
+
+  .home__value {
+    padding-right: 0;
+  }
+}
+
+/* ==========================================================================
+   Village introduction: targeted refinements
+   --------------------------------------------------------------------------
+   The long-form page keeps its existing structure and its own rules further
+   down index.css. What changes here is the shared chrome, so it matches the
+   rest of the redesign: the same shell width, the same display face, and gold
+   used as ornament rather than as a fill behind dark text.
+   ========================================================================== */
+
+.village-page {
+  position: relative;
+  z-index: 2;
+}
+
+.village-hero h1 {
+  font-family: var(--font-display);
+  line-height: var(--leading-display);
+  /* "Lễ" and "Ước" stack a diacritic above a descender; without this reserve
+     the display size clips them against the hero veil. */
+  padding-bottom: 0.08em;
+}
+
+.village-hero__eyebrow,
+.village-section__heading>span,
+.village-craft__content>span,
+.village-location__copy>span {
+  color: var(--gold-deep);
+  letter-spacing: var(--tracking-label);
+}

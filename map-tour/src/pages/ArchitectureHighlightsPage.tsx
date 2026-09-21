@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Link, useParams } from 'react-router-dom';
 import { fetchVillageDetails } from '../lib/api';
-import { villageHomePath, villageIntroductionPath } from '../routes';
+import { villageHomePath, villageIntroductionPath, villageLandmarkPath } from '../routes';
 import { PanoramaViewer } from '../components/PanoramaViewer';
 import { SafeImage } from '../components/SafeImage';
 import type { VillageDetails } from '../types';
@@ -108,7 +108,7 @@ export function ArchitectureHighlightsPage() {
 
   useEffect(() => {
     const previousTitle = document.title;
-    document.title = village ? `Kiến trúc độc đáo — ${village.name}` : 'Kiến trúc độc đáo';
+    document.title = village ? `Kiến trúc độc đáo - ${village.name}` : 'Kiến trúc độc đáo';
     return () => {
       document.title = previousTitle;
     };
@@ -140,7 +140,7 @@ export function ArchitectureHighlightsPage() {
         <span>Di sản kiến trúc {village.name}</span>
         <h1>Kiến trúc độc đáo</h1>
         <p>
-          Những công trình cổ còn lưu giữ nguyên vẹn kết cấu, vật liệu và giá trị văn hóa — lịch sử của{' '}
+          Những công trình cổ còn lưu giữ nguyên vẹn kết cấu, vật liệu và giá trị văn hóa và lịch sử của{' '}
           {village.name}, khảo sát chi tiết từ đình, chùa đến nhà cổ trong làng.
         </p>
       </header>
@@ -163,7 +163,9 @@ export function ArchitectureHighlightsPage() {
                     </span>
                   )}
                 </div>
-                <h2>{building.name}</h2>
+                <h2>
+                  <Link to={villageLandmarkPath(village.slug, building.id)}>{building.name}</Link>
+                </h2>
                 {building.overallStructureDescription && <p>{building.overallStructureDescription}</p>}
                 {building.culturalHistoricalValue && <p>{building.culturalHistoricalValue}</p>}
                 {!isTagLength(building.builtPeriod) && building.builtPeriod && (

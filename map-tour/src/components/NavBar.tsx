@@ -17,6 +17,17 @@ const UOC_LE_SLUG = 'lang-uoc-le';
 const UOC_LE_GOOGLE_MAPS_URL =
   'https://www.google.com/maps/d/u/0/viewer?mid=1FSfpZVwnCOeQQ77lkjT_zfsOGrOTNps&ll=20.82282640394975%2C105.81270017822966&z=15';
 
+/**
+ * Seal character for the brand mark: the initial of the village's distinctive
+ * name, with the generic "Làng" prefix dropped so every village does not stamp
+ * the same "L".
+ */
+function sealCharacter(name: string | undefined): string {
+  if (!name) return '\u25C6';
+  const distinctive = name.replace(/^L\u00E0ng\s+/i, '').trim();
+  return (distinctive || name).charAt(0).toUpperCase();
+}
+
 export function NavBar() {
   const { village } = useVillage();
 
@@ -24,7 +35,10 @@ export function NavBar() {
     <header className="nav-bar">
       <div className="nav-bar__inner">
         <NavLink to="." end className="nav-bar__brand">
-          {village?.name ?? '...'}
+          <span className="motif-seal" aria-hidden="true">
+            {sealCharacter(village?.name)}
+          </span>
+          {village?.name ?? '\u2026'}
         </NavLink>
         <nav className="nav-bar__links">
           {NAV_ITEMS.map((item) => {

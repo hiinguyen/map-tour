@@ -2,7 +2,12 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useSites } from '../context/SitesContext';
 import { usePanorama } from '../context/PanoramaContext';
 import { useVillage } from '../context/VillageContext';
-import { APP_ROUTES } from '../routes';
+import { Reveal } from '../components/Reveal';
+import { APP_ROUTES, villageLandmarkPath } from '../routes';
+
+function sealCharacter(name: string): string {
+  return name.trim().charAt(0).toUpperCase();
+}
 
 interface ValueCard {
   title: string;
@@ -34,23 +39,31 @@ export function HomePage() {
   return (
     <div className="home">
       <section className="home__hero">
-        <p className="home__hero-eyebrow">Du lịch làng nghề số</p>
-        <h1>{village?.name ?? '...'}</h1>
-        <p className="home__hero-lead">
-          Bản đồ số các di tích và khu vực di sản trong làng — điểm thí điểm của đề tài nghiên cứu du lịch thông
-          minh làng truyền thống vùng đồng bằng sông Hồng.
-        </p>
-        <div className="home__hero-actions">
-          <Link className="home__cta home__cta--story" to={APP_ROUTES.villageIntroduction}>
-            Giới thiệu về làng
-          </Link>
-          <button type="button" className="home__cta home__cta--primary" onClick={() => navigate('map')}>
-            Khám phá bản đồ
-          </button>
-          <button type="button" className="home__cta home__cta--ghost" onClick={() => navigate('360')}>
-            Xem trải nghiệm 360°
-          </button>
+        <div className="home__hero-content">
+          <h1>{village?.name ?? '\u2026'}</h1>
+          <p className="home__hero-lead">
+            Bản đồ số các di tích và khu vực di sản trong làng, cùng hồ sơ từng công trình.
+          </p>
+          <div className="home__hero-actions">
+            <button type="button" className="home__cta home__cta--primary" onClick={() => navigate('map')}>
+              Khám phá bản đồ
+            </button>
+            <Link className="home__cta home__cta--story" to={APP_ROUTES.villageIntroduction}>
+              Giới thiệu về làng
+            </Link>
+          </div>
         </div>
+        {village?.coverUrl && (
+          <div className="home__hero-media">
+            <img
+              src={village.coverUrl}
+              alt={`Cảnh ${village.name}`}
+              width={1200}
+              height={900}
+              decoding="async"
+            />
+          </div>
+        )}
       </section>
 
       {values.length > 0 && (
@@ -69,10 +82,7 @@ export function HomePage() {
 
       <section className="home__featured">
         <div className="home__featured-heading">
-          <div>
-            <span className="home__section-eyebrow">Di sản tiêu biểu</span>
-            <h2>Điểm tham quan trong làng</h2>
-          </div>
+          <h2>Điểm tham quan trong làng</h2>
           <button type="button" className="home__link" onClick={() => navigate('di-san')}>
             Xem danh sách đầy đủ →
           </button>
@@ -88,33 +98,42 @@ export function HomePage() {
           </p>
         )}
         <div className="home__featured-grid">
-          {sites.map((site) => (
-            <article key={site.id} className="home__featured-card">
-              {site.cover ? (
-                <img
-                  className="home__featured-image"
-                  src={site.cover.url}
-                  alt={site.name}
-                  loading="lazy"
-                  decoding="async"
-                  width={800}
-                  height={600}
-                />
-              ) : (
-                <div
-                  className={`home__featured-placeholder home__featured-placeholder--${site.kind}`}
-                  role="img"
-                  aria-label={`Chưa có ảnh đại diện cho ${site.name}`}
-                >
-                  <span aria-hidden="true">{site.name.charAt(0)}</span>
-                  <small>Chưa có ảnh đại diện</small>
-                </div>
-              )}
+          {sites.map((site, index) => (
+            <Reveal key={site.id} as="article" index={index} className="home__featured-card">
+              <div className="home__featured-media">
+                {site.cover ? (
+                  <img
+                    className="home__featured-image"
+                    src={site.cover.url}
+                    alt={site.name}
+                    loading="lazy"
+                    decoding="async"
+                    width={800}
+                    height={600}
+                  />
+                ) : (
+                  <div
+                    className="home__featured-placeholder motif-lattice"
+                    role="img"
+                    aria-label={`Chưa có ảnh đại diện cho ${site.name}`}
+                  >
+                    <span className="motif-seal" aria-hidden="true">
+                      {sealCharacter(site.name)}
+                    </span>
+                  </div>
+                )}
+              </div>
               <div className="home__featured-body">
-                <span className={`home__featured-badge home__featured-badge--${site.kind}`}>
+                <span
+                  className={
+                    site.kind === 'area' ? 'home__featured-badge home__featured-badge--area' : 'home__featured-badge'
+                  }
+                >
                   {site.kind === 'point' ? 'Điểm di tích' : 'Khu vực'}
                 </span>
-                <h3>{site.name}</h3>
+                <h3>
+                  <Link to={villageLandmarkPath(village?.slug ?? '', site.id)}>{site.name}</Link>
+                </h3>
                 <p>{site.description}</p>
                 <div className="home__featured-actions">
                   <button type="button" onClick={() => navigate(`map?site=${site.id}`)}>
@@ -127,13 +146,14 @@ export function HomePage() {
                   )}
                 </div>
               </div>
-            </article>
+            </Reveal>
           ))}
         </div>
       </section>
 
       <footer className="home__footer-note">
-        Dữ liệu toạ độ hiện là minh hoạ cho mục đích nghiên cứu, chưa phải kết quả khảo sát thực địa.
+        Điểm thí điểm của đề tài nghiên cứu du lịch thông minh làng truyền thống vùng đồng bằng sông Hồng. Dữ liệu
+        toạ độ hiện là minh hoạ, chưa phải kết quả khảo sát thực địa.
       </footer>
     </div>
   );
