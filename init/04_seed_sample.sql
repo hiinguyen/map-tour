@@ -30,8 +30,6 @@ VALUES
    '"Ninomaru Teien" by Greg Zaal (CC0, Poly Haven)', 'sites', '20000000-0000-0000-0000-000000000003'),
   ('10000000-0000-0000-0000-000000000004', '/panoramas/gieng-lang.jpg', 'panorama',
    '"Pond" by Greg Zaal (CC0, Poly Haven)', 'sites', '20000000-0000-0000-0000-000000000004'),
-  ('10000000-0000-0000-0000-000000000005', '/panoramas/khu-lang-co.jpg', 'panorama',
-   '"Small Rural Road" by Andreas Mischok (CC0, Poly Haven)', 'sites', '20000000-0000-0000-0000-000000000005'),
   ('10000000-0000-0000-0000-000000000006', '/panoramas/khu-lang-nghe-gio-cha.jpg', 'panorama',
    '"Outdoor Workshop" by Dimitrios Savva & Jarod Guest (CC0, Poly Haven)', 'sites', '20000000-0000-0000-0000-000000000006');
 
@@ -72,7 +70,7 @@ VALUES
    '[[20.826209,105.810158],[20.826909,105.810558],[20.826709,105.811358],[20.825809,105.811258],[20.825509,105.810458]]'::jsonb,
    'Khu làng cổ', 'Quần thể di sản',
    'Cụm nhà cổ, ngõ xóm lát gạch nghiêng và không gian kiến trúc truyền thống vùng đồng bằng sông Hồng.',
-   '10000000-0000-0000-0000-000000000005', '30000000-0000-0000-0000-000000000005'),
+   NULL, '30000000-0000-0000-0000-000000000005'),
   ('20000000-0000-0000-0000-000000000006', '00000000-0000-0000-0000-000000000001', 'area',
    '[[20.824609,105.811058],[20.825009,105.811658],[20.824409,105.812158],[20.823909,105.811558]]'::jsonb,
    'Khu làng nghề giò chả', 'Làng nghề',

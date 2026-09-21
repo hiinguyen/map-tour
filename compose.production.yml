@@ -31,8 +31,11 @@ services:
       CORS_ORIGIN: ${API_CORS_ORIGIN}
       OSRM_URL: http://osrm:5000
       ADMIN_IMPORT_KEY: ${ADMIN_IMPORT_KEY:-}
+      UPLOADS_DIR: /app/uploads
     ports:
       - "127.0.0.1:8787:8787"
+    volumes:
+      - map_tour_uploads:/app/uploads
     depends_on:
       postgres:
         condition: service_healthy
@@ -53,3 +56,4 @@ services:
 
 volumes:
   map_tour_pgdata:
+  map_tour_uploads:

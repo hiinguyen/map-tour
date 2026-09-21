@@ -7,3 +7,10 @@ dist
 public/tiles/*.pmtiles
 public/tiles/*.mbtiles
 public/tiles/*:Zone.Identifier
+public/cu-da/
+public/ha-thai/
+public/lang-chuong/
+public/lang-cuu/
+public/phu-vinh/
+public/uoc-le/
+public/
