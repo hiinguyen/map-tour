@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { usePanorama } from '../context/PanoramaContext';
+import { Reveal } from './Reveal';
 import { villageArchitecturePath, villageHeritagePath, villageMapPath, villagePanoramaPath } from '../routes';
 import type { TourSite, VillageDetails } from '../types';
 import { SafeImage } from './SafeImage';
@@ -48,11 +49,11 @@ export function VillageQuickFacts({ village }: { village: VillageDetails }) {
   if (facts.length === 0) return null;
   return (
     <section className="village-facts" aria-label="Thông tin nhanh">
-      {facts.map((fact) => (
-        <div className="village-fact" key={fact.label}>
+      {facts.map((fact, index) => (
+        <Reveal className="village-fact" index={index} key={fact.label}>
           <strong>{fact.value}</strong>
           <span>{fact.label}</span>
-        </div>
+        </Reveal>
       ))}
     </section>
   );
@@ -62,16 +63,42 @@ export function VillageOverview({ village }: { village: VillageDetails }) {
   const hasDetails = Boolean(village.overview) || village.aliases.length > 0 || village.mainOccupations.length > 0;
   if (!hasDetails) return null;
 
+  // Most villages have no `overview` prose yet, which left the whole left
+  // column of this grid blank next to a tall facts card. A photograph carries
+  // the column until the text exists, and still earns its place beside it
+  // once it does. gallery[0] is already the hero, so start one further in.
+  const galleryImage = village.gallery[1] ?? village.gallery[0] ?? null;
+  const image =
+    galleryImage ?? (village.coverUrl ? { url: village.coverUrl, alt: village.name } : null);
+  const hasProse = Boolean(village.overview);
+  // Ước Lễ has neither prose nor a single photograph on file. Rather than park
+  // the facts card beside an empty half, let it run the full width.
+  const isCardOnly = !hasProse && !image;
+
   return (
     <section className="village-section village-overview" aria-labelledby="village-overview-title">
       <div className="village-section__heading">
         <span>Hồ sơ làng</span>
         <h2 id="village-overview-title">Tổng quan về {village.name}</h2>
       </div>
-      <div className="village-overview__grid">
-        <div className="village-prose">
-          {village.overview && <TextParagraphs text={village.overview} />}
+      <div className={`village-overview__grid${isCardOnly ? ' village-overview__grid--card-only' : ''}`}>
+        {!isCardOnly && (
+        <div className="village-overview__main">
+          {hasProse && (
+            <div className="village-prose">
+              <TextParagraphs text={village.overview!} />
+            </div>
+          )}
+          {image && (
+            <figure
+              className={`village-overview__media${hasProse ? '' : ' village-overview__media--solo'}`}
+            >
+              <SafeImage src={image.url} alt={image.alt} className="village-overview__image" />
+              <figcaption>{image.alt}</figcaption>
+            </figure>
+          )}
         </div>
+        )}
         <aside className="village-detail-card" aria-label="Thông tin làng">
           {village.currentAdminLocation && (
             <div><span>Địa giới hiện tại</span><strong>{village.currentAdminLocation}</strong></div>
@@ -118,18 +145,18 @@ export function VillageHistory({ village }: { village: VillageDetails }) {
 
   return (
     <section className="village-section village-history" aria-labelledby="village-history-title">
-      <div className="village-section__heading">
+      <Reveal className="village-section__heading">
         <span>Ký ức và nguồn cội</span>
         <h2 id="village-history-title">Lịch sử hình thành</h2>
-      </div>
+      </Reveal>
       <div className="village-timeline">
-          {village.timeline.map((item) => (
-            <article className="village-timeline__item" key={item.id}>
+          {village.timeline.map((item, index) => (
+            <Reveal as="article" className="village-timeline__item" index={index} key={item.id}>
               {item.period && <time className="village-timeline__period">{item.period}</time>}
               <span className="village-timeline__type">{historyLabel(item.type)}</span>
               <h3>{item.title}</h3>
               {item.body && <TextParagraphs text={item.body} />}
-            </article>
+            </Reveal>
           ))}
       </div>
     </section>
@@ -142,25 +169,33 @@ export function VillageCulturalStories({ village }: { village: VillageDetails })
 
   return (
     <section className="village-section" aria-labelledby="village-cultural-stories-title">
-      <div className="village-section__heading village-section__heading--center">
+      <Reveal className="village-section__heading village-section__heading--center">
         <h2 id="village-cultural-stories-title">Phong tục và nghĩa tình {village.name}</h2>
-      </div>
+      </Reveal>
       <div className="village-story-grid">
-        {village.customs.map((story) => <VillageStoryCard key={story.id} story={story} tone="gold" />)}
-        {village.culturalStories.map((story) => <VillageStoryCard key={story.id} story={story} tone="paper" />)}
-        {village.legends.map((story) => <VillageStoryCard key={story.id} story={story} tone="red" />)}
+        {village.customs.map((story, index) => <VillageStoryCard key={story.id} story={story} tone="gold" index={index} />)}
+        {village.culturalStories.map((story, index) => <VillageStoryCard key={story.id} story={story} tone="paper" index={village.customs.length + index} />)}
+        {village.legends.map((story, index) => <VillageStoryCard key={story.id} story={story} tone="red" index={village.customs.length + village.culturalStories.length + index} />)}
       </div>
     </section>
   );
 }
 
-function VillageStoryCard({ story, tone }: { story: VillageDetails['history'][number]; tone: 'gold' | 'paper' | 'red' }) {
+function VillageStoryCard({
+  story,
+  tone,
+  index,
+}: {
+  story: VillageDetails['history'][number];
+  tone: 'gold' | 'paper' | 'red';
+  index: number;
+}) {
   return (
-    <article className={`village-story-card village-story-card--${tone}`}>
+    <Reveal as="article" className={`village-story-card village-story-card--${tone}`} index={index}>
       <span>{historyLabel(story.type)}</span>
       <h3>{story.title}</h3>
       {story.body && <TextParagraphs text={story.body} />}
-    </article>
+    </Reveal>
   );
 }
 
@@ -204,43 +239,41 @@ export function VillageArchitecture({ village }: { village: VillageDetails }) {
 
   return (
     <section className="village-section" aria-labelledby="village-architecture-title">
-      <div className="village-section__heading village-section__heading--center">
+      <Reveal className="village-section__heading village-section__heading--center">
         <h2 id="village-architecture-title">Kiến trúc độc đáo</h2>
-      </div>
+      </Reveal>
       <div className="village-architecture-grid">
-        {architectureHighlights.map((highlight) => (
-          <Link
-            key={highlight.id}
-            className="village-architecture-card"
-            to={villageArchitecturePath(village.slug)}
-          >
-            <div className="village-architecture-card__media">
-              {highlight.cover ? (
-                <SafeImage src={highlight.cover.url} alt={highlight.name} className="village-architecture-card__image" />
-              ) : (
-                <div className="village-architecture-card__placeholder" aria-hidden="true">{highlight.name.charAt(0)}</div>
-              )}
-              {highlight.panorama && <span className="village-architecture-card__badge-360">360°</span>}
-            </div>
-            <div className="village-architecture-card__body">
-              {(isTagLength(highlight.builtPeriod) || highlight.heritageRank) && (
-                <span>
-                  {[isTagLength(highlight.builtPeriod) ? highlight.builtPeriod : null, highlight.heritageRank]
-                    .filter(Boolean)
-                    .join(' · ')}
-                </span>
-              )}
-              <h3>{highlight.name}</h3>
-              {architectureExcerpt(highlight) && <p>{architectureExcerpt(highlight)}</p>}
-            </div>
-          </Link>
+        {architectureHighlights.map((highlight, index) => (
+          <Reveal key={highlight.id} index={index}>
+            <Link className="village-architecture-card" to={villageArchitecturePath(village.slug)}>
+              <div className="village-architecture-card__media">
+                {highlight.cover ? (
+                  <SafeImage src={highlight.cover.url} alt={highlight.name} className="village-architecture-card__image" />
+                ) : (
+                  <div className="village-architecture-card__placeholder" aria-hidden="true">{highlight.name.charAt(0)}</div>
+                )}
+                {highlight.panorama && <span className="village-architecture-card__badge-360">360°</span>}
+              </div>
+              <div className="village-architecture-card__body">
+                {(isTagLength(highlight.builtPeriod) || highlight.heritageRank) && (
+                  <span>
+                    {[isTagLength(highlight.builtPeriod) ? highlight.builtPeriod : null, highlight.heritageRank]
+                      .filter(Boolean)
+                      .join(' · ')}
+                  </span>
+                )}
+                <h3>{highlight.name}</h3>
+                {architectureExcerpt(highlight) && <p>{architectureExcerpt(highlight)}</p>}
+              </div>
+            </Link>
+          </Reveal>
         ))}
       </div>
-      <div className="village-architecture__cta">
+      <Reveal className="village-architecture__cta">
         <Link className="village-button village-button--gold" to={villageArchitecturePath(village.slug)}>
           Khám phá kiến trúc độc đáo →
         </Link>
-      </div>
+      </Reveal>
     </section>
   );
 }
@@ -251,12 +284,12 @@ export function VillageCulture({ sites, villageSlug }: { sites: TourSite[]; vill
 
   return (
     <section className="village-section" aria-labelledby="village-culture-title">
-      <div className="village-section__heading village-section__heading--center">
+      <Reveal className="village-section__heading village-section__heading--center">
         <h2 id="village-culture-title">Di sản và không gian văn hóa</h2>
-      </div>
+      </Reveal>
       <div className="village-sites-grid">
-        {sites.map((site) => (
-          <article className="village-site-card" key={site.id}>
+        {sites.map((site, index) => (
+          <Reveal as="article" className="village-site-card" index={index} key={site.id}>
             <div className="village-site-card__media">
               {site.cover ? (
                 <SafeImage src={site.cover.url} alt={site.name} className="village-site-card__image" />
@@ -273,7 +306,7 @@ export function VillageCulture({ sites, villageSlug }: { sites: TourSite[]; vill
                 {site.panorama && <button type="button" onClick={() => openPanorama(site.id)}>Xem 360°</button>}
               </div>
             </div>
-          </article>
+          </Reveal>
         ))}
       </div>
     </section>
@@ -316,13 +349,13 @@ export function VillageVideos({ village }: { village: VillageDetails }) {
 
   return (
     <section className="village-section" aria-labelledby="village-video-title">
-      <div className="village-section__heading">
+      <Reveal className="village-section__heading">
         <span>Tư liệu nghe nhìn</span>
         <h2 id="village-video-title">Video lịch sử và văn hóa làng</h2>
-      </div>
+      </Reveal>
       <div className="village-videos">
-        {videos.map((video) => (
-          <article className="village-video" key={video.id}>
+        {videos.map((video, index) => (
+          <Reveal as="article" className="village-video" index={index} key={video.id}>
             <iframe
               src={video.embedUrl}
               title={video.caption ?? `Video tư liệu ${village.name}`}
@@ -335,7 +368,7 @@ export function VillageVideos({ village }: { village: VillageDetails }) {
               <h3>{video.caption ?? `Video tư liệu ${village.name}`}</h3>
               <a href={video.url} target="_blank" rel="noreferrer">Mở video trên YouTube ↗</a>
             </div>
-          </article>
+          </Reveal>
         ))}
       </div>
     </section>
@@ -364,15 +397,20 @@ export function VillageGallery({ village }: { village: VillageDetails }) {
   if (village.gallery.length === 0) return null;
   return (
     <section className="village-section" aria-labelledby="village-gallery-title">
-      <div className="village-section__heading">
+      <Reveal className="village-section__heading">
         <h2 id="village-gallery-title">Thư viện hình ảnh</h2>
-      </div>
+      </Reveal>
       <div className="village-gallery">
         {village.gallery.slice(0, 6).map((image, index) => (
-          <figure className={index === 0 ? 'village-gallery__item village-gallery__item--feature' : 'village-gallery__item'} key={image.url}>
+          <Reveal
+            as="figure"
+            index={index}
+            key={image.url}
+            className={index === 0 ? 'village-gallery__item village-gallery__item--feature' : 'village-gallery__item'}
+          >
             <SafeImage src={image.url} alt={image.alt} className="village-gallery__image" />
             <figcaption>{image.alt}</figcaption>
-          </figure>
+          </Reveal>
         ))}
       </div>
     </section>

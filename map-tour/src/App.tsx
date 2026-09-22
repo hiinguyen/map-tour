@@ -38,6 +38,11 @@ const ArchitectureHighlightsPage = lazy(() =>
 export function App() {
   return (
     <div className="app">
+      {/* Decorated paper ground for the whole document. Fixed to the viewport
+          and sized with `cover`, so it fills the window on every aspect ratio
+          instead of leaving the page floating on a flat colour once the
+          content scrolls past the first screen. */}
+      <div className="app-backdrop" aria-hidden="true" />
       {/* Paper tooth over the whole document: fixed and non-interactive so the
           texture composites once instead of repainting as the page scrolls. */}
       <div className="motif-grain" aria-hidden="true" />

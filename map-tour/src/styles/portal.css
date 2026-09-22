@@ -13,11 +13,11 @@
   display: flex;
   flex-direction: column;
   min-height: 100%;
-  background-color: var(--color-background);
-  background-image: url('/heritage-bg-pattern.svg');
-  background-repeat: no-repeat;
-  background-position: center top;
-  background-size: 100% auto;
+  /* The paper ground is painted once for the whole app by `.app-backdrop`
+     (see styles/motifs.css). The portal used to repeat it here pinned to the
+     top at `100% auto`, which left the pattern as a band across the masthead
+     and flat colour under everything below it. */
+  background: transparent;
 }
 
 /* --------------------------------------------------------------------------

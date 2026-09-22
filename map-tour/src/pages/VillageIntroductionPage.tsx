@@ -16,6 +16,7 @@ import {
   VillageQuickFacts,
   VillageVideos,
 } from '../components/VillageIntroductionSections';
+import { Reveal } from '../components/Reveal';
 import { fetchVillageDetails } from '../lib/api';
 import { villageHomePath } from '../routes';
 import type { VillageDetails } from '../types';
@@ -83,24 +84,34 @@ export function VillageIntroductionPage() {
       <nav className="village-breadcrumb" aria-label="Đường dẫn trang">
         <Link to={villageHomePath(village.slug)}>Trang chủ</Link><span aria-hidden="true">/</span><span>Giới thiệu {village.name}</span>
       </nav>
+      {/* The hero is above the fold on every viewport, so it keeps its own
+          entry animation; everything below it is released by the scroll
+          observer as the reader reaches it.
+
+          Sections built from a repeating grid (history, stories, architecture,
+          landmarks, gallery, videos) reveal their own heading and then stagger
+          their items, so they are NOT wrapped again here - a reveal inside a
+          reveal plays both transforms at once and reads as a wobble. */}
       <VillageHero village={village} />
       <VillageQuickFacts village={village} />
-      <VillageOverview village={village} />
-      <VillageNameMeaning village={village} />
+      <Reveal><VillageOverview village={village} /></Reveal>
+      <Reveal><VillageNameMeaning village={village} /></Reveal>
       <VillageHistory village={village} />
-      <TraditionalCraft village={village} />
+      <Reveal><TraditionalCraft village={village} /></Reveal>
       <VillageCulturalStories village={village} />
-      <VillageLandscape village={village} />
+      <Reveal><VillageLandscape village={village} /></Reveal>
       <VillageArchitecture village={village} />
       <VillageCulture sites={village.sites} villageSlug={village.slug} />
       <VillageGallery village={village} />
       <VillageVideos village={village} />
-      <VillageMapSection village={village} />
-      <VillageCallToAction
-        villageName={village.name}
-        villageSlug={village.slug}
-        hasPanorama={village.statistics.panoramaCount > 0}
-      />
+      <Reveal><VillageMapSection village={village} /></Reveal>
+      <Reveal>
+        <VillageCallToAction
+          villageName={village.name}
+          villageSlug={village.slug}
+          hasPanorama={village.statistics.panoramaCount > 0}
+        />
+      </Reveal>
       <footer className="village-page__footer">Dữ liệu giới thiệu được tổng hợp từ hồ sơ số hóa của {village.name}.</footer>
     </article>
   );

@@ -108,6 +108,39 @@
 }
 
 /* --------------------------------------------------------------------------
+   Nền giấy dó - the page ground
+   The ornamented paper (hồi văn fret band, mắt cáo lattice, corner rosettes)
+   used to be painted onto <body> with `background-attachment: fixed`, which
+   is the one value iOS Safari refuses to honour: there it silently falls back
+   to scrolling with the document and the drawing runs out below the fold.
+
+   It is a fixed layer instead - one element, composited once, never repainted
+   on a scroll frame - and sized with `cover` so it fills the viewport whatever
+   its aspect ratio. The vector source scales without softening, and the flat
+   colour underneath means a failed request degrades to plain paper rather
+   than to white.
+   -------------------------------------------------------------------------- */
+.app-backdrop {
+  position: fixed;
+  inset: 0;
+  /* Negative, not 0. A fixed layer at z-index 0 is a *positioned* box, and
+     positioned boxes paint above in-flow, non-positioned content in the same
+     stacking context - so an opaque one at 0 hides every page that has not
+     remembered to promote itself with `position: relative; z-index: 2` (the
+     admin screens, the 360° list, the architecture page, the village error
+     state). A negative index drops it below in-flow content for every page,
+     present and future, which is what the hero's own image and veil layers
+     already do (see .village-hero__image in index.css). */
+  z-index: -1;
+  pointer-events: none;
+  background-color: var(--color-background);
+  background-image: url('/heritage-bg-pattern.svg');
+  background-repeat: no-repeat;
+  background-position: center center;
+  background-size: cover;
+}
+
+/* --------------------------------------------------------------------------
    Giấy dó - paper tooth
    Fixed and non-interactive so the filter composites once instead of
    repainting on every scroll frame.

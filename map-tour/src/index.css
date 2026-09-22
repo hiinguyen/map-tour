@@ -1433,7 +1433,10 @@ a.admin-nav__item:focus-visible {
 
 .village-section {
   margin-top: clamp(3.5rem, 7vw, 6.5rem);
-  animation: village-rise 0.65s ease both;
+  /* No mount animation here any more. `village-rise` ran on load for every
+     section at once, so by the time a reader scrolled down to one it had
+     already finished playing against a blank screen. Entry is driven by the
+     Reveal observer instead - see styles/motifs.css. */
 }
 
 .village-section__heading {
@@ -1509,6 +1512,69 @@ a.admin-nav__item:focus-visible {
   font-size: 1.04rem;
   line-height: 1.85;
   color: var(--color-on-surface-variant);
+}
+
+/* Nothing to set beside the facts card - no prose, no photograph - so it
+   takes the full measure instead of leaving half the row blank. */
+.village-overview__grid--card-only {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.village-overview__main {
+  display: flex;
+  flex-direction: column;
+  gap: clamp(1.25rem, 3vw, 2rem);
+  min-width: 0;
+}
+
+/* The photograph that keeps this column from reading as empty space beside
+   the facts card. Framed like the rest of the village imagery: square corners
+   softened to the page radius, a gold hairline set in from the edge. */
+.village-overview__media {
+  position: relative;
+  margin: 0;
+  overflow: hidden;
+  border-radius: var(--radius-lg);
+  background: var(--color-surface-container);
+  box-shadow: 0 12px 30px rgba(54, 15, 0, 0.1);
+}
+
+.village-overview__image,
+.village-overview__media .safe-image--fallback {
+  display: block;
+  width: 100%;
+  height: 100%;
+  aspect-ratio: 16 / 10;
+  object-fit: cover;
+  transition: transform 0.6s ease;
+}
+
+/* With no overview prose above it the photograph carries the whole column, so
+   it stands taller to hold its own against the facts card beside it. */
+.village-overview__media--solo .village-overview__image,
+.village-overview__media--solo .safe-image--fallback {
+  aspect-ratio: 4 / 3;
+}
+
+.village-overview__media:hover .village-overview__image {
+  transform: scale(1.03);
+}
+
+.village-overview__media::after {
+  content: '';
+  position: absolute;
+  inset: 10px;
+  border: 1px solid rgba(201, 162, 39, 0.45);
+  pointer-events: none;
+}
+
+.village-overview__media figcaption {
+  position: absolute;
+  inset: auto 0 0;
+  padding: 2.5rem 1.1rem 0.95rem;
+  font-size: 0.82rem;
+  color: #fff;
+  background: linear-gradient(0deg, rgba(34, 5, 0, 0.82), transparent);
 }
 
 .village-prose {
@@ -1846,6 +1912,18 @@ a.admin-nav__item:focus-visible {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 1.1rem;
+}
+
+/* Each card is wrapped in a Reveal, so the grid item is now that wrapper.
+   Pass the stretch through to the card, otherwise the row's cards stop
+   matching heights. */
+.village-architecture-grid > .u-reveal {
+  display: flex;
+  min-width: 0;
+}
+
+.village-architecture-grid > .u-reveal > .village-architecture-card {
+  flex: 1;
 }
 
 .village-architecture-card {
