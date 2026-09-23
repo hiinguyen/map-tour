@@ -1,0 +1,179 @@
+/* Styles for SiteFootprintMap and area chip overlays */
+
+.footprint-map {
+  /* R19: containing block cho chip nổi ở bề ngang rộng. Vì khung là con đầu
+     tiên nên góc trên trái của figure trùng góc trên trái của khung. */
+  position: relative;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.footprint-map__frame {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  max-height: 60vh;
+  border-radius: var(--radius-sm, 6px);
+  overflow: hidden;
+  border: 1px solid var(--color-outline-variant, #e0d5c8);
+  background-color: var(--color-surface-container-low, #f4eadf);
+}
+
+.footprint-map__canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.footprint-map__fallback {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+  text-align: center;
+  color: var(--color-on-surface-variant);
+  font-size: var(--text-sm, 0.875rem);
+}
+
+.footprint-map__badge {
+  position: absolute;
+  top: 0.85rem;
+  right: 0.85rem;
+  z-index: 2;
+  padding: 0.3rem 0.65rem;
+  background-color: rgba(54, 15, 0, 0.75);
+  color: #fffaf4;
+  border-radius: var(--radius-xs, 4px);
+  font-size: var(--text-xs, 0.75rem);
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  backdrop-filter: blur(4px);
+  pointer-events: none;
+}
+
+.footprint-map__caption {
+  font-size: var(--text-sm, 0.875rem);
+  line-height: 1.5;
+  color: var(--color-on-surface-variant);
+  margin: 0;
+}
+
+/* Shared map-area-chip used by SiteFootprintMap and /map page overlay */
+.map-area-chip {
+  position: absolute;
+  top: 0.85rem;
+  left: 0.85rem;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  padding: 0.6rem 0.85rem;
+  background: var(--color-surface-container-lowest, #fffaf4);
+  border: 1px solid var(--color-outline-variant, #e0d5c8);
+  border-radius: var(--radius-sm, 6px);
+  box-shadow: 0 4px 12px rgba(54, 15, 0, 0.12);
+  max-width: calc(100% - 1.7rem);
+  pointer-events: none;
+}
+
+.map-area-chip__label {
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-label, 0.08em);
+  color: var(--color-gold-deep, #c9a227);
+}
+
+.map-area-chip__value {
+  font-family: var(--font-display, inherit);
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: var(--color-primary, #610000);
+  line-height: 1.2;
+}
+
+.map-area-chip__note {
+  font-size: var(--text-xs, 0.75rem);
+  color: var(--color-on-surface-variant, #665b52);
+}
+
+.map-area-chip__survey {
+  font-size: var(--text-xs, 0.75rem);
+  color: var(--color-on-surface-variant, #665b52);
+  margin-top: 0.1rem;
+  border-top: 1px dashed var(--color-outline-variant, #e0d5c8);
+  padding-top: 0.2rem;
+}
+
+/* MapLibre scale control skin */
+.maplibregl-ctrl-scale {
+  background: var(--color-surface-container-lowest, #fffaf4) !important;
+  border: 1px solid var(--color-primary, #610000) !important;
+  border-top: none !important;
+  color: var(--color-primary, #610000) !important;
+  font-family: var(--font-sans, inherit) !important;
+  font-size: var(--text-xs, 0.75rem) !important;
+  font-weight: 600 !important;
+  padding: 0 4px !important;
+  height: 16px !important;
+  line-height: 15px !important;
+  box-shadow: 0 2px 6px rgba(54, 15, 0, 0.1) !important;
+}
+
+@media (max-width: 900px) {
+  .footprint-map__frame {
+    aspect-ratio: 4 / 3;
+    max-height: 52vh;
+  }
+
+  /* T8: chip nhỏ một bậc trong media query 900px. Cỡ chữ và padding đều giảm
+     một nấc; nhãn in hoa là phần rộng nhất nên giảm cả hai. */
+  .map-area-chip {
+    top: 0.6rem;
+    left: 0.6rem;
+    padding: 0.35rem 0.5rem;
+  }
+
+  .map-area-chip__label {
+    font-size: 0.56rem;
+  }
+
+  .map-area-chip__value {
+    font-size: 0.95rem;
+  }
+
+  .map-area-chip__note,
+  .map-area-chip__survey {
+    font-size: 0.68rem;
+  }
+
+  /* R19: ở bề ngang hẹp, chip ra khỏi mặt bản đồ, nằm ngay dưới khung và trên
+     caption dạng khối riêng. Không còn chồng lấn nên polygon giữ nguyên cỡ,
+     và chip không cần né thước. */
+  .footprint-map > .map-area-chip {
+    position: static;
+    top: auto;
+    left: auto;
+    max-width: 100%;
+    align-self: flex-start;
+  }
+
+  /* Giữ thước tỉ lệ sát góc dưới trái ở bề ngang hẹp. */
+  .maplibregl-ctrl-bottom-left {
+    bottom: 0.6rem !important;
+    left: 0.6rem !important;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .map-area-chip {
+    transition: none !important;
+    animation: none !important;
+  }
+}

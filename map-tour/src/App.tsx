@@ -13,6 +13,9 @@ const Experience3DPage = lazy(() =>
 const AdminImportPage = lazy(() =>
   import('./pages/AdminImportPage').then((m) => ({ default: m.AdminImportPage })),
 );
+const AdminKmlImportPage = lazy(() =>
+  import('./pages/AdminKmlImportPage').then((m) => ({ default: m.AdminKmlImportPage })),
+);
 const VillageEditPage = lazy(() =>
   import('./pages/VillageEditPage').then((m) => ({ default: m.VillageEditPage })),
 );
@@ -59,6 +62,7 @@ export function App() {
             <Route path="360" element={<Experience3DPage />} />
           </Route>
           <Route path="/admin/import" element={<AdminImportPage />} />
+          <Route path="/admin/kml" element={<AdminKmlImportPage />} />
           <Route path="/admin/villages" element={<VillageEditPage />} />
           <Route path="/admin/sites" element={<AdminSitesPage />} />
           <Route path="/admin/heritage-buildings" element={<AdminHeritageBuildingsPage />} />
@@ -68,3 +72,4 @@ export function App() {
     </div>
   );
 }
+

@@ -3,6 +3,7 @@ import { Link, useNavigate, useParams } from 'react-router-dom';
 import { PanoramaModal } from '../components/PanoramaModal';
 import { Reveal } from '../components/Reveal';
 import { SafeImage } from '../components/SafeImage';
+import { SiteFootprintMap } from '../components/SiteFootprintMap';
 import { fetchVillageDetails } from '../lib/api';
 import { villageHeritagePath, villageHomePath, villageMapPath } from '../routes';
 import type { SitePanorama, TourSite, VillageArchitectureHighlight, VillageDetails } from '../types';
@@ -339,7 +340,7 @@ export function LandmarkDetailPage() {
                 className="landmark__btn landmark__btn--primary"
                 onClick={() => navigate(`${villageMapPath(villageSlug)}?site=${siteId}`)}
               >
-                Xem trên bản đồ
+                Xem trong bản đồ làng
               </button>
             )}
             {record.panorama && (
@@ -379,6 +380,19 @@ export function LandmarkDetailPage() {
             ))}
           </div>
         </Reveal>
+      )}
+
+      {record.site && (
+        <SiteFootprintMap
+          name={record.name}
+          category={record.site.category}
+          footprint={record.site.boundary ?? null}
+          center={record.site.position}
+          areaM2={record.site.areaM2}
+          spanM={record.site.spanM}
+          surveyedAreaM2={record.building?.landAreaM2}
+          estimatedRadiusM={record.site.estimatedRadiusM}
+        />
       )}
 
       {(description || structure || culturalValue) && (

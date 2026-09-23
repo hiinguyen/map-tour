@@ -1,10 +1,11 @@
 import { useMemo } from 'react';
 import type { TourSite } from '../types';
+import { footprintOf, formatAreaM2 } from '../lib/geo';
 
 interface SiteListProps {
   sites: TourSite[];
   selectedId: string | null;
-  onSelect: (id: string) => void;
+  onSelect: (id: string, source: 'list') => void;
   onOpenPanorama: (id: string) => void;
 }
 
@@ -42,10 +43,16 @@ export function SiteList({ sites, selectedId, onSelect, onOpenPanorama }: SiteLi
                     type="button"
                     className="site-list__item"
                     aria-pressed={site.id === selectedId}
-                    onClick={() => onSelect(site.id)}
+                    onClick={() => onSelect(site.id, 'list')}
                   >
                     <span className="site-list__name">{site.name}</span>
-                    <span className="site-list__meta">{site.kind === 'point' ? 'Điểm di tích' : 'Khu vực'}</span>
+                    <span className="site-list__meta">
+                      {footprintOf(site) && site.areaM2
+                        ? `Khu vực · ${formatAreaM2(site.areaM2)}`
+                        : site.kind === 'point'
+                        ? 'Điểm di tích'
+                        : 'Khu vực'}
+                    </span>
                   </button>
                   {site.panorama && (
                     <button

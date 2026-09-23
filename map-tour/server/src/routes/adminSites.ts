@@ -7,6 +7,9 @@ import { env } from '../env.js';
 import { pool } from '../db.js';
 import { requireAdminKey } from '../middleware/adminAuth.js';
 import { listSitesForVillage, parseSiteBasicInfoInput, removeSiteImage, setSiteImage, updateSiteBasicInfo } from '../services/siteAdmin.js';
+import { parseBoundaryInput } from '../lib/boundaryInput.js';
+import { validateRing, villageBoundsFrom } from '../lib/boundaryValidate.js';
+import type { LatLng } from '../lib/geo.js';
 
 const MAX_COVER_IMAGE_BYTES = 8 * 1024 * 1024;
 const MAX_PANORAMA_IMAGE_BYTES = 20 * 1024 * 1024; // panoramas are large equirectangular images
@@ -54,6 +57,94 @@ adminSitesRouter.get('/admin/villages/:villageId/sites', async (req, res, next) 
   try {
     const sites = await listSitesForVillage(pool, req.params.villageId);
     res.json(sites);
+  } catch (error) {
+    next(error);
+  }
+});
+
+
+adminSitesRouter.post('/admin/sites/:id/boundary/preview', async (req, res, next) => {
+  try {
+    const rawInput = String(
+      req.body?.boundaryInput ?? req.body?.rawInput ?? req.body?.raw ?? req.body?.boundary ?? req.body?.text ?? '',
+    );
+    const siteResult = await pool.query<{ village_id: string; heritage_building_id: string | null }>(
+      'SELECT village_id, heritage_building_id FROM sites WHERE id = $1',
+      [req.params.id],
+    );
+    const site = siteResult.rows[0];
+    if (!site) {
+      res.status(404).json({ error: 'Không tìm thấy điểm tham quan.' });
+      return;
+    }
+
+    let landAreaM2: number | null = null;
+    if (site.heritage_building_id) {
+      const hbResult = await pool.query<{ land_area_m2: number | null }>(
+        'SELECT land_area_m2 FROM heritage_buildings WHERE id = $1',
+        [site.heritage_building_id],
+      );
+      landAreaM2 = hbResult.rows[0]?.land_area_m2 ?? null;
+    }
+
+    const sitesInVillage = await pool.query<{ position_lat: number; position_lng: number; boundary: unknown }>(
+      'SELECT position_lat, position_lng, boundary FROM sites WHERE village_id = $1',
+      [site.village_id],
+    );
+    const allPoints: LatLng[] = [];
+    for (const r of sitesInVillage.rows) {
+      if (r.position_lat !== null && r.position_lng !== null) {
+        allPoints.push([r.position_lat, r.position_lng]);
+      }
+      if (Array.isArray(r.boundary)) {
+        for (const pt of r.boundary) {
+          if (Array.isArray(pt) && pt.length >= 2) allPoints.push([pt[0], pt[1]]);
+        }
+      }
+    }
+    const villageBounds = villageBoundsFrom(allPoints.length > 0 ? allPoints : [[20.8, 105.8]]);
+
+    const parsed = parseBoundaryInput(rawInput);
+    if (parsed.errors.length > 0) {
+      res.json({
+        ring: [],
+        vertexCount: 0,
+        areaM2: 0,
+        centroid: null,
+        detectedFormat: parsed.format,
+        warnings: [],
+        errors: parsed.errors,
+      });
+      return;
+    }
+
+    const validated = validateRing(parsed.ring, { villageBounds, landAreaM2 });
+    res.json({
+      ring: validated.ring,
+      vertexCount: validated.ring.length,
+      areaM2: validated.areaM2,
+      centroid: validated.centroid,
+      detectedFormat: parsed.format,
+      warnings: validated.warnings,
+      errors: validated.errors,
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+adminSitesRouter.delete('/admin/sites/:id/boundary', async (req, res, next) => {
+  try {
+    const result = await pool.query<{ id: string }>(
+      `UPDATE sites SET boundary = NULL, kind = 'point', boundary_source = NULL, boundary_updated_at = NULL
+       WHERE id = $1 RETURNING id`,
+      [req.params.id],
+    );
+    if (result.rows.length === 0) {
+      res.status(404).json({ error: 'Không tìm thấy điểm tham quan.' });
+      return;
+    }
+    res.json({ id: req.params.id, kind: 'point' });
   } catch (error) {
     next(error);
   }

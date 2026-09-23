@@ -5,14 +5,16 @@ import { AdminNav } from '../components/AdminNav';
 import { SafeImage } from '../components/SafeImage';
 import { fetchVillages } from '../lib/api';
 import {
+  deleteSiteBoundary,
   fetchAdminSites,
+  previewSiteBoundary,
   removeSiteCoverImage,
   removeSitePanoramaImage,
   updateAdminSite,
   uploadSiteCoverImage,
   uploadSitePanoramaImage,
 } from '../lib/adminApi';
-import type { AdminSite, AdminSiteInput } from '../lib/adminApi';
+import type { AdminSite, AdminSiteInput, BoundaryPreviewResult } from '../lib/adminApi';
 import { KNOWN_SITE_CATEGORIES } from '../lib/siteCategories';
 import type { Village } from '../types';
 
@@ -30,6 +32,7 @@ function toFormState(site: AdminSite): AdminSiteInput {
     historyCultureNote: site.historyCultureNote,
     positionLat: site.positionLat,
     positionLng: site.positionLng,
+    boundaryInput: site.rawBoundary ?? '',
   };
 }
 
@@ -45,6 +48,8 @@ export function AdminSitesPage() {
   const [sites, setSites] = useState<AdminSite[] | null>(null);
   const [selectedSiteId, setSelectedSiteId] = useState('');
   const [form, setForm] = useState<AdminSiteInput | null>(null);
+  const [previewResult, setPreviewResult] = useState<BoundaryPreviewResult | null>(null);
+  const [isPreviewing, setIsPreviewing] = useState(false);
   const [isLoadingSites, setIsLoadingSites] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [isUploadingCover, setIsUploadingCover] = useState(false);
@@ -77,6 +82,7 @@ export function AdminSitesPage() {
   useEffect(() => {
     const selectedSite = sites?.find((item) => item.id === selectedSiteId) ?? null;
     setForm(selectedSite ? toFormState(selectedSite) : null);
+    setPreviewResult(null);
     setStatusMessage(null);
   }, [selectedSiteId, sites]);
 
@@ -90,6 +96,38 @@ export function AdminSitesPage() {
     setSites((current) => (current ? current.map((item) => (item.id === siteId ? { ...item, ...patch } : item)) : current));
   }
 
+  async function handlePreviewBoundary() {
+    if (!selectedSite || !form?.boundaryInput?.trim()) return;
+    setIsPreviewing(true);
+    setError(null);
+    try {
+      const result = await previewSiteBoundary(selectedSite.id, form.boundaryInput);
+      setPreviewResult(result);
+    } catch (err) {
+      setError(getErrorMessage(err));
+    } finally {
+      setIsPreviewing(false);
+    }
+  }
+
+  async function handleDeleteBoundary() {
+    if (!selectedSite) return;
+    setIsSaving(true);
+    setError(null);
+    setStatusMessage(null);
+    try {
+      await deleteSiteBoundary(selectedSite.id);
+      replaceSiteInList(selectedSite.id, { kind: 'point', boundaryPointCount: 0, rawBoundary: null });
+      updateField('boundaryInput', '');
+      setPreviewResult(null);
+      setStatusMessage(`Đã xoá ranh giới điểm "${selectedSite.name}", điểm đã về dạng "point".`);
+    } catch (err) {
+      setError(getErrorMessage(err));
+    } finally {
+      setIsSaving(false);
+    }
+  }
+
   async function handleSubmit(event: FormEvent) {
     event.preventDefault();
     if (!selectedSite || !form) return;
@@ -98,8 +136,21 @@ export function AdminSitesPage() {
     setStatusMessage(null);
     try {
       const updated = await updateAdminSite(selectedSite.id, form);
-      replaceSiteInList(selectedSite.id, { ...form, name: updated.name });
-      setStatusMessage(`Đã lưu thông tin điểm "${updated.name}".`);
+      replaceSiteInList(selectedSite.id, {
+        name: updated.name,
+        kind: updated.kind ?? selectedSite.kind,
+        boundaryPointCount: updated.vertexCount ?? selectedSite.boundaryPointCount,
+        rawBoundary: form.boundaryInput || null,
+        positionLat: form.positionLat,
+        positionLng: form.positionLng,
+      });
+      if (updated.detectedFormat && updated.vertexCount !== undefined && updated.areaM2 !== undefined) {
+        setStatusMessage(
+          `Đã lưu điểm "${updated.name}". Nhận dạng ${updated.detectedFormat}, ${updated.vertexCount} đỉnh, diện tích ${Math.round(updated.areaM2).toLocaleString('vi-VN')} m².`,
+        );
+      } else {
+        setStatusMessage(`Đã lưu thông tin điểm "${updated.name}".`);
+      }
     } catch (err) {
       setError(getErrorMessage(err));
     } finally {
@@ -348,35 +399,89 @@ export function AdminSitesPage() {
                 />
               </label>
 
-              {selectedSite.kind === 'point' ? (
-                <div className="admin-sites__position">
-                  <label>
-                    Vĩ độ (lat)
-                    <input
-                      type="number"
-                      step="any"
-                      value={form.positionLat ?? ''}
-                      onChange={(event) => updateField('positionLat', parseNumberInput(event.target.value))}
-                      required
-                    />
-                  </label>
-                  <label>
-                    Kinh độ (lng)
-                    <input
-                      type="number"
-                      step="any"
-                      value={form.positionLng ?? ''}
-                      onChange={(event) => updateField('positionLng', parseNumberInput(event.target.value))}
-                      required
-                    />
-                  </label>
+              <div className="admin-sites__position">
+                <label>
+                  Vĩ độ (lat)
+                  <input
+                    type="number"
+                    step="any"
+                    value={form.positionLat ?? ''}
+                    onChange={(event) => updateField('positionLat', parseNumberInput(event.target.value))}
+                    required
+                  />
+                </label>
+                <label>
+                  Kinh độ (lng)
+                  <input
+                    type="number"
+                    step="any"
+                    value={form.positionLng ?? ''}
+                    onChange={(event) => updateField('positionLng', parseNumberInput(event.target.value))}
+                    required
+                  />
+                </label>
+              </div>
+
+              <div className="admin-sites__boundary">
+                <label>
+                  Toạ độ ranh giới (GeoJSON, mảng [[vĩ độ, kinh độ]], hoặc khối &lt;coordinates&gt; dán từ KML)
+                  <textarea
+                    value={form.boundaryInput ?? ''}
+                    onChange={(event) => {
+                      updateField('boundaryInput', event.target.value);
+                      setPreviewResult(null);
+                    }}
+                    rows={5}
+                    placeholder="Dán toạ độ GeoJSON ({...}), khối <coordinates> từ KML, hoặc mảng [[lat, lng], ...]"
+                  />
+                </label>
+
+                <div className="admin-sites__boundary-actions" style={{ display: 'flex', gap: '0.5rem', marginTop: '0.5rem', marginBottom: '0.5rem' }}>
+                  <button
+                    type="button"
+                    className="admin-btn--secondary"
+                    onClick={handlePreviewBoundary}
+                    disabled={isPreviewing || !form.boundaryInput?.trim()}
+                  >
+                    {isPreviewing ? 'Đang kiểm tra...' : 'Xem trước ranh giới'}
+                  </button>
+                  {selectedSite.kind === 'area' && (
+                    <button
+                      type="button"
+                      className="admin-btn--danger"
+                      onClick={handleDeleteBoundary}
+                      disabled={isSaving}
+                    >
+                      Xoá ranh giới (về point)
+                    </button>
+                  )}
                 </div>
-              ) : (
-                <p className="admin-import__empty">
-                  Khu vực có {selectedSite.boundaryPointCount} điểm ranh giới (chỉnh sửa ranh giới trên bản đồ ngoài
-                  phạm vi trang quản trị này).
-                </p>
-              )}
+
+                {previewResult && (
+                  <div className="admin-sites__preview-info" style={{ marginTop: '0.5rem', padding: '0.75rem', background: 'var(--color-surface-variant, #f5f5f5)', borderRadius: '4px' }}>
+                    {previewResult.errors.length > 0 ? (
+                      <div>
+                        {previewResult.errors.map((errItem, idx) => (
+                          <p key={idx} className="admin-import__status admin-import__status--error" style={{ margin: '0.2rem 0' }}>
+                            {errItem}
+                          </p>
+                        ))}
+                      </div>
+                    ) : (
+                      <>
+                        <p style={{ margin: 0, fontWeight: 500 }}>
+                          Phát hiện định dạng <strong>{previewResult.detectedFormat}</strong>, {previewResult.vertexCount} đỉnh, diện tích xấp xỉ <strong>{Math.round(previewResult.areaM2).toLocaleString('vi-VN')} m²</strong>.
+                        </p>
+                        {previewResult.warnings.map((w, idx) => (
+                          <p key={idx} className="admin-import__status admin-import__status--warning" style={{ margin: '0.2rem 0' }}>
+                            {w}
+                          </p>
+                        ))}
+                      </>
+                    )}
+                  </div>
+                )}
+              </div>
 
               <button type="submit" disabled={isSaving}>
                 {isSaving ? 'Đang lưu...' : 'Lưu thông tin'}

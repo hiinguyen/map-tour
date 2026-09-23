@@ -210,6 +210,13 @@
   color: var(--color-primary);
 }
 
+.landmark__section-lead {
+  margin: 0 0 1rem;
+  font-size: var(--text-sm, 0.875rem);
+  line-height: 1.5;
+  color: var(--color-on-surface-variant);
+}
+
 /* --------------------------------------------------------------------------
    Photographs
    A large frame with a scroll-snap filmstrip beneath it, rather than a wall of

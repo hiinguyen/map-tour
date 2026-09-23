@@ -95,6 +95,12 @@
   position: relative;
 }
 
+.app__map > .map-area-chip {
+  top: 0.85rem;
+  left: 0.85rem;
+  z-index: 2;
+}
+
 /* --------------------------------------------------------------------------
    Site list
    Grouped by category, separated by hairlines rather than by card boxes: at
@@ -266,6 +272,11 @@
 
   .app__sidebar-list {
     overflow-y: visible;
+  }
+
+  .app__map > .map-area-chip {
+    top: 0.6rem;
+    left: 0.6rem;
   }
 }
 

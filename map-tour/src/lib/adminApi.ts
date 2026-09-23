@@ -42,6 +42,33 @@ export async function commitImport(parsed: ParsedImport): Promise<ImportCommitSu
   return response.json();
 }
 
+export async function parseKmlFile(file: File, villageId: string): Promise<import('./kmlTypes').ParsedKmlImport> {
+  const formData = new FormData();
+  formData.append('file', file);
+  formData.append('villageId', villageId);
+  const response = await fetch(`${API_BASE_URL}/admin/import/kml/parse`, {
+    method: 'POST',
+    headers: { 'x-admin-key': getAdminKey() },
+    body: formData,
+  });
+  if (!response.ok) throw new Error(await readErrorMessage(response));
+  return response.json();
+}
+
+export async function commitKmlImport(
+  data: import('./kmlTypes').ParsedKmlImport,
+  options?: import('./kmlTypes').KmlCommitOptions,
+): Promise<import('./kmlTypes').KmlCommitSummary> {
+  const response = await fetch(`${API_BASE_URL}/admin/import/kml/commit`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'x-admin-key': getAdminKey() },
+    body: JSON.stringify({ data, options }),
+  });
+  if (!response.ok) throw new Error(await readErrorMessage(response));
+  return response.json();
+}
+
+
 export interface VillageBasicInfoInput {
   name: string;
   aliases: string[];
@@ -111,6 +138,7 @@ export interface AdminSite {
   positionLat: number | null;
   positionLng: number | null;
   boundaryPointCount: number;
+  rawBoundary?: string | null;
   coverUrl: string | null;
   panoramaUrl: string | null;
 }
@@ -124,6 +152,17 @@ export interface AdminSiteInput {
   historyCultureNote: string | null;
   positionLat: number | null;
   positionLng: number | null;
+  boundaryInput?: string | null;
+}
+
+export interface BoundaryPreviewResult {
+  ring: [number, number][];
+  vertexCount: number;
+  areaM2: number;
+  centroid: [number, number] | null;
+  detectedFormat: string;
+  warnings: string[];
+  errors: string[];
 }
 
 export async function fetchAdminSites(villageId: string): Promise<AdminSite[]> {
@@ -134,11 +173,38 @@ export async function fetchAdminSites(villageId: string): Promise<AdminSite[]> {
   return response.json();
 }
 
-export async function updateAdminSite(siteId: string, input: AdminSiteInput): Promise<{ id: string; name: string }> {
+export async function updateAdminSite(siteId: string, input: AdminSiteInput): Promise<{
+  id: string;
+  name: string;
+  kind?: 'point' | 'area';
+  detectedFormat?: string;
+  vertexCount?: number;
+  areaM2?: number;
+  warnings?: string[];
+}> {
   const response = await fetch(`${API_BASE_URL}/admin/sites/${siteId}`, {
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json', 'x-admin-key': getAdminKey() },
     body: JSON.stringify(input),
+  });
+  if (!response.ok) throw new Error(await readErrorMessage(response));
+  return response.json();
+}
+
+export async function previewSiteBoundary(siteId: string, boundaryInput: string): Promise<BoundaryPreviewResult> {
+  const response = await fetch(`${API_BASE_URL}/admin/sites/${siteId}/boundary/preview`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'x-admin-key': getAdminKey() },
+    body: JSON.stringify({ boundaryInput }),
+  });
+  if (!response.ok) throw new Error(await readErrorMessage(response));
+  return response.json();
+}
+
+export async function deleteSiteBoundary(siteId: string): Promise<{ id: string; kind: 'point' }> {
+  const response = await fetch(`${API_BASE_URL}/admin/sites/${siteId}/boundary`, {
+    method: 'DELETE',
+    headers: { 'x-admin-key': getAdminKey() },
   });
   if (!response.ok) throw new Error(await readErrorMessage(response));
   return response.json();

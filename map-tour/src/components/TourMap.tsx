@@ -5,25 +5,18 @@ import {
   NavigationControl,
   Popup,
   LngLatBounds,
-  addProtocol,
-  setWorkerUrl,
   type GeoJSONSource,
   type MapLayerMouseEvent,
 } from 'maplibre-gl';
-import mapLibreWorkerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?url';
-import { Protocol } from 'pmtiles';
-import type { StyleSpecification } from 'maplibre-gl';
-import osmBrightStyle from '../assets/map/osm-bright-style.json';
 import { fetchRoute } from '../lib/api';
 import { MAP_COLORS } from '../lib/mapColors';
 import { getCategoryStyle } from '../lib/siteCategories';
+import { createBasemapStyle } from '../lib/map/basemap';
+import { footprintFeatureCollection } from '../lib/map/footprints';
 import { siteCenter, toLngLat } from '../types';
-import type { AreaSite, LatLng, PointSite, TourSite } from '../types';
+import type { TourSite } from '../types';
+import { footprintOf, footprintCenter, formatAreaM2 } from '../lib/geo';
 
-// vietnam.pmtiles is built with the OpenMapTiles schema (Planetiler's default
-// profile), not the Protomaps schema, so its layers/property names only match
-// an OpenMapTiles-schema style like OSM Bright — not @protomaps/basemaps.
-const PMTILES_SOURCE_ID = 'openmaptiles';
 const AREA_SOURCE_ID = 'tour-areas';
 const AREA_FILL_LAYER_ID = 'tour-areas-fill';
 const AREA_LINE_LAYER_ID = 'tour-areas-line';
@@ -35,11 +28,6 @@ const ROUTE_LINE_LAYER_ID = 'tour-route-line';
 const DIRECTIONS_SOURCE_ID = 'tour-directions';
 const DIRECTIONS_LINE_LAYER_ID = 'tour-directions-line';
 
-// MapLibre v6 loads its module worker as a sibling of the application bundle
-// by default. Importing it as a Vite URL makes the worker part of the
-// production artifact and gives MapLibre the hashed deploy URL explicitly.
-setWorkerUrl(mapLibreWorkerUrl);
-
 // Icon badges and their label pills are a fixed screen-pixel size, so below
 // this zoom a small area polygon can shrink to fewer screen-pixels than the
 // badge itself, making the marker look like it "spills outside" the shape it
@@ -47,6 +35,8 @@ setWorkerUrl(mapLibreWorkerUrl);
 // icon-only dot below this threshold keeps the marker visually proportionate
 // to the shrunk geometry instead of looking misplaced.
 const MARKER_LABEL_MIN_ZOOM = 16;
+// Compact mode is also triggered when a site has a footprint whose projected
+// screen span is smaller than MARKER_BADGE_SIZE * 1.5 — see compactForSite().
 
 // Must match the non-compact .tour-marker/.tour-marker__badge box (32px) and
 // the .tour-marker__label left offset (40px) in index.css — used to compute
@@ -86,153 +76,11 @@ async function fetchRouteFeature(coords: [number, number][]): Promise<GeoJSON.Fe
   }
 }
 
-// PMTiles archives are read through a custom "pmtiles://" URL scheme; the
-// protocol only needs to be registered with MapLibre once per page load.
-let protocolRegistered = false;
-function ensurePmtilesProtocol() {
-  if (protocolRegistered) return;
-  const protocol = new Protocol();
-  addProtocol('pmtiles', protocol.tile);
-  protocolRegistered = true;
-}
-
-// OSM Bright's village-level filters and beige-on-beige palette can make a
-// valid but sparse z14 OpenMapTiles tile look empty. Keep the full style, then
-// add a small set of deterministic layers whose source-layers are verified in
-// vietnam.pmtiles so roads, water, buildings and labels remain unmistakable.
-function visibleBasemapLayers(style: StyleSpecification): StyleSpecification['layers'] {
-  const layers = style.layers.map((layer) => {
-    const sourceLayer = 'source-layer' in layer ? layer['source-layer'] : undefined;
-
-    if (layer.type === 'background') {
-      return { ...layer, paint: { ...layer.paint, 'background-color': '#f4eadf' } };
-    }
-    if (layer.type === 'line' && sourceLayer === 'transportation' && layer.id.includes('casing')) {
-      return { ...layer, paint: { ...layer.paint, 'line-color': '#9b7664', 'line-opacity': 1 } };
-    }
-    if (layer.type === 'line' && sourceLayer === 'waterway') {
-      return { ...layer, paint: { ...layer.paint, 'line-color': '#5e9faa' } };
-    }
-    if (layer.type === 'fill' && sourceLayer === 'water') {
-      return { ...layer, paint: { ...layer.paint, 'fill-color': '#8fc6cc' } };
-    }
-    if (layer.type === 'fill' && sourceLayer === 'building') {
-      return {
-        ...layer,
-        paint: { ...layer.paint, 'fill-color': '#d8b8a0', 'fill-outline-color': '#a98169' },
-      };
-    }
-    return layer;
-  }) as StyleSpecification['layers'];
-
-  return [
-    ...layers,
-    {
-      id: 'tour-basemap-landuse',
-      type: 'fill',
-      source: PMTILES_SOURCE_ID,
-      'source-layer': 'landuse',
-      paint: { 'fill-color': '#dfe4c8', 'fill-opacity': 0.65 },
-    },
-    {
-      id: 'tour-basemap-water',
-      type: 'fill',
-      source: PMTILES_SOURCE_ID,
-      'source-layer': 'water',
-      paint: { 'fill-color': '#83bdc6', 'fill-opacity': 0.9 },
-    },
-    {
-      id: 'tour-basemap-waterways',
-      type: 'line',
-      source: PMTILES_SOURCE_ID,
-      'source-layer': 'waterway',
-      paint: {
-        'line-color': '#4f96a3',
-        'line-width': ['interpolate', ['linear'], ['zoom'], 12, 1.5, 18, 5],
-      },
-    },
-    {
-      id: 'tour-basemap-buildings',
-      type: 'fill',
-      source: PMTILES_SOURCE_ID,
-      'source-layer': 'building',
-      minzoom: 13,
-      paint: { 'fill-color': '#cda98f', 'fill-outline-color': '#8f6a55', 'fill-opacity': 0.9 },
-    },
-    {
-      id: 'tour-basemap-roads-casing',
-      type: 'line',
-      source: PMTILES_SOURCE_ID,
-      'source-layer': 'transportation',
-      paint: {
-        'line-color': '#8f6f5e',
-        'line-width': ['interpolate', ['linear'], ['zoom'], 12, 2.5, 14, 5, 18, 14],
-      },
-    },
-    {
-      id: 'tour-basemap-roads',
-      type: 'line',
-      source: PMTILES_SOURCE_ID,
-      'source-layer': 'transportation',
-      paint: {
-        'line-color': '#fffaf4',
-        'line-width': ['interpolate', ['linear'], ['zoom'], 12, 1.2, 14, 3, 18, 9],
-      },
-    },
-    {
-      id: 'tour-basemap-road-labels',
-      type: 'symbol',
-      source: PMTILES_SOURCE_ID,
-      'source-layer': 'transportation_name',
-      minzoom: 13,
-      layout: {
-        'symbol-placement': 'line',
-        'text-field': ['coalesce', ['get', 'name:vi'], ['get', 'name']],
-        'text-font': ['Noto Sans Regular'],
-        'text-size': 12,
-      },
-      paint: { 'text-color': '#4d3429', 'text-halo-color': '#fffaf4', 'text-halo-width': 1.5 },
-    },
-    {
-      id: 'tour-basemap-place-labels',
-      type: 'symbol',
-      source: PMTILES_SOURCE_ID,
-      'source-layer': 'place',
-      minzoom: 10,
-      layout: {
-        'text-field': ['coalesce', ['get', 'name:vi'], ['get', 'name']],
-        'text-font': ['Noto Sans Bold'],
-        'text-size': 13,
-      },
-      paint: { 'text-color': '#4d3429', 'text-halo-color': '#fffaf4', 'text-halo-width': 1.5 },
-    },
-  ] as StyleSpecification['layers'];
-}
-
-function closedRing(boundary: LatLng[]): [number, number][] {
-  const ring = boundary.map(toLngLat);
-  const [firstLng, firstLat] = ring[0];
-  const [lastLng, lastLat] = ring[ring.length - 1];
-  if (firstLng !== lastLng || firstLat !== lastLat) ring.push(ring[0]);
-  return ring;
-}
-
-function areasToFeatureCollection(areaSites: AreaSite[]): GeoJSON.FeatureCollection {
-  return {
-    type: 'FeatureCollection',
-    features: areaSites.map((site) => ({
-      type: 'Feature',
-      properties: { id: site.id, name: site.name, description: site.description },
-      geometry: { type: 'Polygon', coordinates: [closedRing(site.boundary)] },
-    })),
-  };
-}
-
 // Marker label sits beside the icon badge (not stacked above it), so nearby
 // markers never have their name text covered by a neighboring pin. The
 // wrapper element keeps a fixed 32x32 box (matching the badge) so MapLibre's
 // center-anchor math stays exact even though the label overflows it visually.
-function createMarkerElement(site: TourSite, onSelect: (id: string) => void): HTMLDivElement {
+function createMarkerElement(site: TourSite, onSelect: (id: string, source: 'map') => void): HTMLDivElement {
   const style = getCategoryStyle(site.category);
   const element = document.createElement('div');
   element.className = 'tour-marker';
@@ -245,11 +93,11 @@ function createMarkerElement(site: TourSite, onSelect: (id: string) => void): HT
   element.setAttribute('role', 'button');
   element.setAttribute('tabindex', '0');
   element.setAttribute('aria-label', site.name);
-  element.addEventListener('click', () => onSelect(site.id));
+  element.addEventListener('click', () => onSelect(site.id, 'map'));
   element.addEventListener('keydown', (event: KeyboardEvent) => {
     if (event.key !== 'Enter' && event.key !== ' ') return;
     event.preventDefault();
-    onSelect(site.id);
+    onSelect(site.id, 'map');
   });
   return element;
 }
@@ -381,7 +229,7 @@ function siteBounds(sites: TourSite[]): LngLatBounds | null {
   if (sites.length === 0) return null;
   const bounds = new LngLatBounds();
   for (const site of sites) {
-    const points = site.kind === 'point' ? [site.position] : site.boundary;
+    const points = site.boundary && site.boundary.length > 0 ? site.boundary : [site.position];
     for (const point of points) bounds.extend(toLngLat(point));
   }
   return bounds;
@@ -390,10 +238,16 @@ function siteBounds(sites: TourSite[]): LngLatBounds | null {
 function popupHtml(site: TourSite): string {
   const name = escapeHtml(site.name);
   const description = escapeHtml(site.description);
+  // R14: dòng diện tích chỉ hiện khi site có ranh giới (footprintOf là guard
+  // duy nhất cho dữ liệu KML lỗi). Point không ranh giới không có dòng này.
+  const areaLine =
+    footprintOf(site) && site.areaM2
+      ? `<p class="map-popup__area">Diện tích: ${formatAreaM2(site.areaM2)}</p>`
+      : '';
   const panoramaButton = site.panorama
     ? `<button type="button" class="popup-panorama-btn" data-site-id="${escapeHtml(site.id)}">Xem 360°</button>`
     : '';
-  return `<div class="map-popup"><strong>${name}</strong><p>${description}</p>${panoramaButton}</div>`;
+  return `<div class="map-popup"><strong>${name}</strong><p>${description}</p>${areaLine}${panoramaButton}</div>`;
 }
 
 function escapeHtml(value: string): string {
@@ -407,23 +261,38 @@ function escapeHtml(value: string): string {
 interface TourMapProps {
   sites: TourSite[];
   selectedId: string | null;
-  onSelect: (id: string) => void;
+  onSelect: (id: string, source: 'list' | 'map') => void;
   onOpenPanorama: (id: string) => void;
+  /**
+   * Nguồn phát ra selectedId hiện tại (R16). Bấm ghim hoặc polygon trên bản
+   * đồ truyền 'map', bấm dòng sidebar truyền 'list', lần đầu đọc ?site= là
+   * 'deeplink'. Mặc định 'list' để các trang chỉ xem bản đồ giữ hành vi cũ.
+   */
+  selectionSource?: 'deeplink' | 'list' | 'map';
   /** Point-to-point "chỉ đường" result to draw, or null to clear it. */
   directionsRoute?: GeoJSON.Feature<GeoJSON.LineString> | null;
 }
 
-export function TourMap({ sites, selectedId, onSelect, onOpenPanorama, directionsRoute = null }: TourMapProps) {
+export function TourMap({
+  sites,
+  selectedId,
+  onSelect,
+  onOpenPanorama,
+  selectionSource = 'list',
+  directionsRoute = null,
+}: TourMapProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<MapLibreMap | null>(null);
   const markersRef = useRef<Record<string, Marker>>({});
   const selectedIdRef = useRef<string | null>(selectedId);
+  // Holds the focusSite function once the map's load event fires, so the
+  // selectedId effect can call it without attaching it to the MapLibre object.
+  const focusSiteRef = useRef<((id: string, source: 'deeplink' | 'list' | 'map') => void) | null>(null);
 
   useEffect(() => {
     if (!containerRef.current || sites.length === 0) return;
 
     let disposed = false;
-    ensurePmtilesProtocol();
 
     // Put the initial viewport inside the PMTiles archive before MapLibre
     // starts loading the style. Waiting for the style's `load` event to fit
@@ -432,21 +301,7 @@ export function TourMap({ sites, selectedId, onSelect, onOpenPanorama, direction
     // event in some browsers.
     const initialBounds = siteBounds(sites)!;
 
-    const pmtilesUrl = new URL('/tiles/vietnam.pmtiles', window.location.origin).href;
-    const style: StyleSpecification = {
-      ...(osmBrightStyle as StyleSpecification),
-      layers: visibleBasemapLayers(osmBrightStyle as StyleSpecification),
-      sources: {
-        [PMTILES_SOURCE_ID]: {
-          type: 'vector',
-          url: `pmtiles://${pmtilesUrl}`,
-          minzoom: 0,
-          maxzoom: 14,
-          attribution:
-            '<a href="https://www.openmaptiles.org/">OpenMapTiles</a> © <a href="https://osm.org/copyright">OpenStreetMap</a>',
-        },
-      },
-    };
+    const style = createBasemapStyle();
     const map = new MapLibreMap({
       container: containerRef.current,
       style,
@@ -468,8 +323,9 @@ export function TourMap({ sites, selectedId, onSelect, onOpenPanorama, direction
     };
     containerRef.current.addEventListener('click', handlePopupClick);
 
-    const pointSites = sites.filter((site): site is PointSite => site.kind === 'point');
-    const areaSites = sites.filter((site): site is AreaSite => site.kind === 'area');
+    const footprintSites = sites.filter((site) => footprintOf(site) !== null);
+    const pointSites = sites.filter((site) => footprintOf(site) === null);
+    const areaSites = footprintSites;
     // Points before areas, matching creation order below — the order this
     // array is built in is also the tie-break priority used by
     // updateLabelCollisions when two markers' labels would overlap.
@@ -488,7 +344,7 @@ export function TourMap({ sites, selectedId, onSelect, onOpenPanorama, direction
 
       map.addSource(AREA_SOURCE_ID, {
         type: 'geojson',
-        data: areasToFeatureCollection(areaSites),
+        data: footprintFeatureCollection(areaSites),
       });
       map.addLayer({
         id: AREA_FILL_LAYER_ID,
@@ -507,7 +363,7 @@ export function TourMap({ sites, selectedId, onSelect, onOpenPanorama, direction
         const feature = event.features?.[0];
         const id = feature?.properties?.id;
         if (typeof id !== 'string') return;
-        onSelect(id);
+        onSelect(id, 'map');
         new Popup({ offset: 12 })
           .setLngLat(event.lngLat)
           .setHTML(popupHtml(areaSites.find((site) => site.id === id)!))
@@ -521,22 +377,94 @@ export function TourMap({ sites, selectedId, onSelect, onOpenPanorama, direction
       });
 
       // Area polygons get the same icon+label marker as points, centered on
-      // their centroid, so every category reads consistently on the map.
+      // the footprint centroid (not the original point position), so the badge
+      // always sits within the polygon it marks — even after KML import changes
+      // the boundary without updating the stored position.
       for (const site of areaSites) {
         const marker = new Marker({ element: createMarkerElement(site, onSelect) })
-          .setLngLat(toLngLat(siteCenter(site)))
+          .setLngLat(toLngLat(footprintCenter(site)))
           .setPopup(new Popup({ offset: 24 }).setHTML(popupHtml(site)))
           .addTo(map);
         markersRef.current[site.id] = marker;
         cacheLabelSize(marker, site.id, labelSizes);
       }
 
-      const updateMarkers = () => {
-        const compact = map.getZoom() < MARKER_LABEL_MIN_ZOOM;
-        for (const marker of Object.values(markersRef.current)) {
-          marker.getElement().classList.toggle('tour-marker--compact', compact);
+      // Helper: minimum screen-pixel span of a site's boundary bounds.
+      // Returns null for point sites (no footprint).
+      function projectedSpanPx(site: TourSite): number | null {
+        const fp = footprintOf(site);
+        if (!fp) return null;
+        const bounds = new LngLatBounds();
+        for (const pt of fp) bounds.extend(toLngLat(pt));
+        const sw = map.project(bounds.getSouthWest());
+        const ne = map.project(bounds.getNorthEast());
+        return Math.min(Math.abs(ne.x - sw.x), Math.abs(sw.y - ne.y));
+      }
+
+      // Per-site compact predicate:
+      //   - site WITH footprint: collapse when its projected span is < badge*1.5
+      //   - point site: collapse below MARKER_LABEL_MIN_ZOOM (global threshold)
+      function compactForSite(site: TourSite): boolean {
+        const span = projectedSpanPx(site);
+        if (span !== null) return span < MARKER_BADGE_SIZE * 1.5;
+        return map.getZoom() < MARKER_LABEL_MIN_ZOOM;
+      }
+
+      // Deep-link: focus camera on the selected site once layers are ready.
+      // source='deeplink'|'list': always move.
+      // source='map': skip if bounds already fill enough of the viewport.
+      const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      function focusSite(siteId: string, source: 'deeplink' | 'list' | 'map' = 'deeplink') {
+        const site = sites.find((s) => s.id === siteId);
+        if (!site) return;
+        const fp = footprintOf(site);
+        if (fp && fp.length >= 3) {
+          const bounds = new LngLatBounds();
+          for (const pt of fp) bounds.extend(toLngLat(pt));
+          // Skip camera move only when triggered from the map itself (user
+          // already looking at the target). Deep-links and sidebar clicks
+          // always reframe, because the user navigated from outside the map.
+          if (source === 'map') {
+            const mapW = map.getContainer().clientWidth;
+            const mapH = map.getContainer().clientHeight;
+            const sw = map.project(bounds.getSouthWest());
+            const ne = map.project(bounds.getNorthEast());
+            const spanW = Math.abs(ne.x - sw.x);
+            const inView =
+              sw.x >= mapW * 0.075 && ne.x <= mapW * 0.925 &&
+              ne.y >= mapH * 0.075 && sw.y <= mapH * 0.925 &&
+              spanW >= mapW * 0.08;
+            if (inView) return;
+          }
+          map.fitBounds(bounds, { padding: 60, maxZoom: 19, duration: prefersReducedMotion ? 0 : 600 });
+        } else {
+          map.easeTo({
+            center: toLngLat(siteCenter(site)),
+            zoom: Math.max(map.getZoom(), 17),
+            duration: prefersReducedMotion ? 0 : 600,
+          });
         }
-        const badgeSize = compact ? MARKER_BADGE_SIZE_COMPACT : MARKER_BADGE_SIZE;
+      }
+      // Store in ref so the selectedId effect can call it after mount (R11).
+      focusSiteRef.current = focusSite;
+
+      if (selectedIdRef.current) {
+        focusSite(selectedIdRef.current, 'deeplink');
+      }
+
+      const updateMarkers = () => {
+        // Each marker computes its own compact state: area sites use projected
+        // footprint span; point sites fall back to the global zoom threshold.
+        const globalCompact = map.getZoom() < MARKER_LABEL_MIN_ZOOM;
+        let anyCompact = false;
+        for (const site of [...pointSites, ...areaSites]) {
+          const marker = markersRef.current[site.id];
+          if (!marker) continue;
+          const compact = compactForSite(site);
+          marker.getElement().classList.toggle('tour-marker--compact', compact);
+          if (compact) anyCompact = true;
+        }
+        const badgeSize = (anyCompact || globalCompact) ? MARKER_BADGE_SIZE_COMPACT : MARKER_BADGE_SIZE;
         resolveMarkerLayout(map, markersRef.current, orderedSiteIds, labelSizes, selectedIdRef.current, badgeSize);
       };
       updateMarkers();
@@ -577,6 +505,7 @@ export function TourMap({ sites, selectedId, onSelect, onOpenPanorama, direction
       containerRef.current?.removeEventListener('click', handlePopupClick);
       map.remove();
       mapRef.current = null;
+      focusSiteRef.current = null;
     };
     // Sites arrive asynchronously from the active village API. The guard at
     // the start delays map creation until a non-empty dataset is available;
@@ -601,11 +530,23 @@ export function TourMap({ sites, selectedId, onSelect, onOpenPanorama, direction
       ]);
     }
 
+    // Move the camera to the newly-selected site (R1).
+    // R16: nguồn chọn quyết định "chỉ di khi cần". Bấm ghim/polygon là 'map'
+    // nên có thể bị bỏ qua khi mục tiêu đã nằm gọn trong khung; sidebar là
+    // 'list' nên luôn di chuyển camera.
+    // KHÔNG chốt bằng map.isStyleLoaded() ở đây: setPaintProperty ngay phía
+    // trên làm style bẩn nên isStyleLoaded() lập tức trả false, khiến mọi lần
+    // chọn đều thoát sớm và camera không bao giờ di. focusSiteRef chỉ được gán
+    // trong handler load, nên trước load nó là null và lời gọi này là no-op.
+    if (selectedId) {
+      focusSiteRef.current?.(selectedId, selectionSource);
+    }
+
     // Re-run the same collision pass registered on the map's "move" event so
     // selecting a site immediately gives its label priority, instead of
     // waiting for the next pan/zoom to re-resolve overlaps.
     map.fire('move');
-  }, [selectedId]);
+  }, [selectedId, selectionSource]);
 
   useEffect(() => {
     const map = mapRef.current;

@@ -34,18 +34,15 @@ interface BaseSite {
   cover?: SitePanorama;
 }
 
-export interface PointSite extends BaseSite {
-  kind: 'point';
+export interface TourSite extends BaseSite {
+  kind: 'point' | 'area';
   position: LatLng;
+  boundary?: LatLng[];
+  areaM2?: number;
+  spanM?: { width: number; height: number };
+  estimatedRadiusM?: number | null;
+  landAreaM2?: number | null;
 }
-
-export interface AreaSite extends BaseSite {
-  /** Represents a large-footprint site as a polygon built from multiple boundary points. */
-  kind: 'area';
-  boundary: LatLng[];
-}
-
-export type TourSite = PointSite | AreaSite;
 
 export interface VillageHistoryItem {
   id: string;
@@ -138,33 +135,6 @@ export interface VillageDetails {
 }
 
 export function siteCenter(site: TourSite): LatLng {
-  if (site.kind === 'point') return site.position;
-  return polygonCentroid(site.boundary);
+  return site.position;
 }
 
-// Area-weighted polygon centroid (planar approximation — accurate enough at
-// the sub-kilometer footprints this app renders) rather than a naive vertex
-// average, so the marker lands at the shape's visual center instead of
-// drifting toward whichever side happens to have more boundary points.
-function polygonCentroid(points: LatLng[]): LatLng {
-  let area = 0;
-  let centroidLat = 0;
-  let centroidLng = 0;
-  for (let i = 0; i < points.length; i++) {
-    const [lat1, lng1] = points[i];
-    const [lat2, lng2] = points[(i + 1) % points.length];
-    const cross = lng1 * lat2 - lng2 * lat1;
-    area += cross;
-    centroidLng += (lng1 + lng2) * cross;
-    centroidLat += (lat1 + lat2) * cross;
-  }
-  area /= 2;
-  if (area === 0) {
-    const [latSum, lngSum] = points.reduce(
-      ([lat, lng], [pointLat, pointLng]) => [lat + pointLat, lng + pointLng],
-      [0, 0],
-    );
-    return [latSum / points.length, lngSum / points.length];
-  }
-  return [centroidLat / (6 * area), centroidLng / (6 * area)];
-}

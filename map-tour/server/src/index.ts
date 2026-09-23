@@ -8,6 +8,7 @@ import { adminRouter } from './routes/admin.js';
 import { adminSitesRouter } from './routes/adminSites.js';
 import { adminHeritageBuildingsRouter } from './routes/adminHeritageBuildings.js';
 import { adminGenericRouter } from './routes/adminGeneric.js';
+import { adminKmlRouter } from './routes/adminKml.js';
 
 const app = express();
 
@@ -28,6 +29,7 @@ app.use('/api', adminRouter);
 app.use('/api', adminSitesRouter);
 app.use('/api', adminHeritageBuildingsRouter);
 app.use('/api', adminGenericRouter);
+app.use('/api', adminKmlRouter);
 
 app.use((error: unknown, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
   console.error('Unhandled API error:', error);

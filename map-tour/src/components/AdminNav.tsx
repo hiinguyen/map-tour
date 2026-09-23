@@ -2,11 +2,13 @@ import { Link } from 'react-router-dom';
 
 const ADMIN_LINKS = [
   { to: '/admin/import', label: 'Nhập dữ liệu Excel' },
+  { to: '/admin/kml', label: 'Nhập KML/KMZ' },
   { to: '/admin/villages', label: 'Làng' },
   { to: '/admin/sites', label: 'Điểm tham quan' },
   { to: '/admin/heritage-buildings', label: 'Công trình di sản' },
   { to: '/admin/data', label: 'Dữ liệu khác' },
 ];
+
 
 type Props = {
   current: string;

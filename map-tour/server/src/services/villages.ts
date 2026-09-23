@@ -1,4 +1,5 @@
 import { pool } from '../db.js';
+import { toTourSite, type SiteRow } from '../lib/siteMapper.js';
 
 type LatLng = [number, number];
 
@@ -19,22 +20,6 @@ interface VillageRow {
   morphology_description: string | null;
   morphology_image_url: string | null;
   morphology_image_attribution: string | null;
-}
-
-interface VillageSiteRow {
-  id: string;
-  kind: 'point' | 'area';
-  name: string;
-  category: string;
-  short_description: string | null;
-  village_name: string;
-  position_lat: number | null;
-  position_lng: number | null;
-  boundary: LatLng[] | null;
-  panorama_url: string | null;
-  panorama_attribution: string | null;
-  cover_url: string | null;
-  cover_attribution: string | null;
 }
 
 interface HistoryRow {
@@ -95,22 +80,6 @@ function media(url: string | null, attribution: string | null) {
   return url ? { url, attribution: attribution ?? undefined } : undefined;
 }
 
-function toSite(row: VillageSiteRow) {
-  const base = {
-    id: row.id,
-    name: row.name,
-    category: row.category,
-    description: row.short_description ?? '',
-    village: row.village_name,
-    panorama: media(row.panorama_url, row.panorama_attribution),
-    cover: media(row.cover_url, row.cover_attribution),
-  };
-
-  return row.kind === 'point'
-    ? { ...base, kind: 'point' as const, position: [row.position_lat, row.position_lng] as LatLng }
-    : { ...base, kind: 'area' as const, boundary: row.boundary ?? [] };
-}
-
 export async function findVillageDetailsBySlug(slug: string) {
   const villageResult = await pool.query<VillageRow>(
     `SELECT v.id, v.slug, v.name, v.aliases, v.admin_location, v.google_maps_link,
@@ -139,13 +108,15 @@ export async function findVillageDetailsBySlug(slug: string) {
   if (!village) return null;
 
   const [sitesResult, historyResult, craftResult, videosResult, heritageBuildingsResult] = await Promise.all([
-    pool.query<VillageSiteRow>(
+    pool.query<SiteRow>(
       `SELECT s.id, s.kind, s.name, s.category, s.short_description,
               v.name AS village_name, s.position_lat, s.position_lng, s.boundary,
               panorama.url AS panorama_url, panorama.attribution AS panorama_attribution,
-              cover.url AS cover_url, cover.attribution AS cover_attribution
+              cover.url AS cover_url, cover.attribution AS cover_attribution,
+              hb.land_area_m2
          FROM sites s
          JOIN villages v ON v.id = s.village_id
+         LEFT JOIN heritage_buildings hb ON hb.id = s.heritage_building_id
          LEFT JOIN media panorama ON panorama.id = s.panorama_media_id
          LEFT JOIN media cover ON cover.id = s.cover_media_id AND cover.kind = 'anh'
         WHERE s.village_id = $1
@@ -208,7 +179,7 @@ export async function findVillageDetailsBySlug(slug: string) {
     ),
   ]);
 
-  const sites = sitesResult.rows.map(toSite);
+  const sites = sitesResult.rows.map(toTourSite);
   const gallery = sites.flatMap((site) => (site.cover ? [{ ...site.cover, alt: site.name }] : []));
   const panoramaCount = sites.filter((site) => site.panorama).length;
   const areaCount = sites.filter((site) => site.kind === 'area').length;
