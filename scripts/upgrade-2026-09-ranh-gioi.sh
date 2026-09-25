@@ -112,13 +112,14 @@ PRECHECK="$(query "
 MEDIA_COUNT="$(query "SELECT count(*) FROM media")"
 [ "$MEDIA_COUNT" -gt 0 ] || die "Bảng media trống - CSDL chưa chạy 011? Dừng để không đánh dấu sai."
 
-# 015 chỉ tự điền toạ độ cho hai site 'area' của seed 004. Site nào khác thiếu
-# toạ độ thì 015 sẽ dừng; báo trước ở đây cho dễ đọc, trước khi tốn công sao lưu.
+# 015 tự điền toạ độ cho site 'area' bằng tâm của ranh giới. Site thiếu toạ độ
+# mà không có ranh giới thì không có gì để tính, 015 sẽ dừng; báo trước ở đây
+# cho dễ đọc, trước khi tốn công sao lưu. (Ranh giới sai định dạng do chính 015
+# chặn, kèm tên site.)
 MISSING="$(query "
   SELECT id || ' | ' || kind || ' | ' || name FROM sites
    WHERE (position_lat IS NULL OR position_lng IS NULL)
-     AND id NOT IN ('20000000-0000-0000-0000-000000000005',
-                    '20000000-0000-0000-0000-000000000006')
+     AND (kind <> 'area' OR boundary IS NULL)
    ORDER BY name")"
 if [ -n "$MISSING" ]; then
   echo "Các site sau thiếu toạ độ điểm, 015 không tự điền được:" >&2
@@ -239,6 +240,10 @@ $$;
 
 CREATE TEMP TABLE image_before ON COMMIT DROP AS
   SELECT * FROM pg_temp.image_fingerprint();
+
+-- Ghi lại site nào đang thiếu toạ độ để sau 015 in ra toạ độ vừa được điền.
+CREATE TEMP TABLE sites_without_position ON COMMIT DROP AS
+  SELECT id FROM sites WHERE position_lat IS NULL OR position_lng IS NULL;
 SQL
 
   echo "$BASELINE_SQL"
@@ -284,6 +289,15 @@ END
 INSERT INTO schema_migrations (filename)
   VALUES ('000_migration_ledger.sql'), ('$TARGET')
   ON CONFLICT (filename) DO NOTHING;
+
+\\echo
+\\echo 'Toạ độ marker vừa được điền (tâm của ranh giới):'
+SELECT s.name AS "site", s.id AS "id",
+       round(s.position_lat::numeric, 6) AS "lat",
+       round(s.position_lng::numeric, 6) AS "lng"
+  FROM sites s
+  JOIN sites_without_position w ON w.id = s.id
+ ORDER BY s.name;
 
 \\echo
 \\echo 'Site sau nâng cấp:'
